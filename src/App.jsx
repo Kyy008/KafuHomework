@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import {
   AssignmentForm,
-  AssignmentList,
   EditAssignmentView,
-  StatsSection,
+  ViewAssignments,
 } from './components/assignments/AssignmentViews'
 import { Sidebar } from './components/layout/Sidebar'
 import { Topbar } from './components/layout/Topbar'
 import { useAssignmentStore } from './hooks/useAssignmentStore'
-import { getAssignmentStats } from './utils/assignmentUtils'
 import { formatDateTimeInputValue } from './utils/dateUtils'
 
 const getViewTitle = (activeView) => {
@@ -24,10 +22,6 @@ function App() {
   const [isEditMenuExpanded, setIsEditMenuExpanded] = useState(true)
   const [now, setNow] = useState(() => new Date())
   const assignmentStore = useAssignmentStore()
-  const assignmentStats = useMemo(
-    () => getAssignmentStats(assignmentStore.assignments, now),
-    [assignmentStore.assignments, now],
-  )
   const minDeadline = useMemo(() => formatDateTimeInputValue(now), [now])
 
   useEffect(() => {
@@ -45,7 +39,6 @@ function App() {
       className={`app-shell ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
       data-active-view={activeView}
       data-assignment-count={assignmentStore.assignments.length}
-      data-filtered-count={assignmentStore.filteredAssignments.length}
     >
       <Topbar />
 
@@ -65,15 +58,12 @@ function App() {
 
         <main className="workspace" aria-label={getViewTitle(activeView)}>
           {activeView === 'view' ? (
-            <div className="view-dashboard">
-              <StatsSection stats={assignmentStats} />
-              <AssignmentList
-                assignments={assignmentStore.filteredAssignments}
-                now={now}
-                onDelete={assignmentStore.deleteAssignment}
-                onToggleComplete={assignmentStore.toggleComplete}
-              />
-            </div>
+            <ViewAssignments
+              assignments={assignmentStore.assignments}
+              now={now}
+              onDelete={assignmentStore.deleteAssignment}
+              onToggleComplete={assignmentStore.toggleComplete}
+            />
           ) : activeView === 'add' ? (
             <AssignmentForm
               minDeadline={minDeadline}

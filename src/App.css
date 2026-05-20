@@ -372,6 +372,80 @@
   line-height: 1;
 }
 
+.assignment-query-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.assignment-query-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.assignment-query-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assignment-query-form input,
+.pagination-size-control select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0f120d;
+  color: var(--foreground);
+  color-scheme: dark;
+  outline: none;
+  padding: 9px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.assignment-query-form input:focus,
+.pagination-size-control select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(207, 217, 244, 0.14);
+}
+
+.assignment-query-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.assignment-query-actions .form-submit-button,
+.assignment-query-actions .form-reset-button {
+  height: 40px;
+  padding: 0 14px;
+}
+
+.assignment-query-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assignment-query-summary strong {
+  color: #ffc3ca;
+}
+
 .assignment-list {
   display: grid;
   gap: 12px;
@@ -674,6 +748,100 @@
   transition:
     width 220ms ease,
     background-color 220ms ease;
+}
+
+.assignment-empty-result {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 22px;
+}
+
+.assignment-empty-result h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 18px;
+}
+
+.assignment-empty-result p {
+  margin: 8px 0 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.assignment-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 12px 14px;
+}
+
+.pagination-size-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pagination-size-control select {
+  width: 86px;
+}
+
+.pagination-page-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pagination-page-list button {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-strong);
+  color: var(--foreground);
+  cursor: pointer;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.pagination-page-list button:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.pagination-page-list button.active {
+  border-color: var(--primary);
+  background: #263245;
+  color: var(--primary);
+}
+
+.pagination-page-list button:disabled {
+  color: #5b6255;
+  cursor: not-allowed;
+}
+
+.pagination-page-list button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pagination-summary {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .assignment-form-panel {
@@ -1155,6 +1323,14 @@
   .edit-assignment-view {
     grid-template-columns: 1fr;
   }
+
+  .assignment-query-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assignment-query-actions {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1219,6 +1395,20 @@
 
   .stat-card strong {
     font-size: 28px;
+  }
+
+  .assignment-query-form {
+    grid-template-columns: 1fr;
+  }
+
+  .assignment-query-summary,
+  .assignment-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pagination-page-list {
+    justify-content: flex-start;
   }
 
   .assignment-card-main {

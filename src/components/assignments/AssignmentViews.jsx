@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   calculateAssignmentProgress,
+  getAssignmentStats,
   getAssignmentStatus,
   getProgressColor,
 } from '../../utils/assignmentUtils'
@@ -17,6 +18,59 @@ import {
   isSameCalendarDay,
   parseLocalDateTimeValue,
 } from '../../utils/dateUtils'
+
+const DEFAULT_QUERY = {
+  course: '',
+  detail: '',
+  endDate: '',
+  startDate: '',
+  title: '',
+}
+
+const PAGE_SIZE_OPTIONS = ['5', '10', '20', 'all']
+
+const normalizeText = (value) => value.trim().toLowerCase()
+
+const includesKeyword = (value, keyword) =>
+  !keyword || value.toLowerCase().includes(keyword)
+
+const getDayStart = (value) => (value ? new Date(`${value}T00:00:00`) : null)
+
+const getDayEnd = (value) => (value ? new Date(`${value}T23:59:59.999`) : null)
+
+const filterAssignmentsByQuery = (assignments, query) => {
+  const titleKeyword = normalizeText(query.title)
+  const detailKeyword = normalizeText(query.detail)
+  const courseKeyword = normalizeText(query.course)
+  const startDate = getDayStart(query.startDate)
+  const endDate = getDayEnd(query.endDate)
+
+  return assignments.filter((assignment) => {
+    const deadline = new Date(assignment.deadline)
+
+    if (!includesKeyword(assignment.title, titleKeyword)) {
+      return false
+    }
+
+    if (!includesKeyword(assignment.detail, detailKeyword)) {
+      return false
+    }
+
+    if (!includesKeyword(assignment.course, courseKeyword)) {
+      return false
+    }
+
+    if (startDate && deadline < startDate) {
+      return false
+    }
+
+    if (endDate && deadline > endDate) {
+      return false
+    }
+
+    return true
+  })
+}
 
 function CheckIcon() {
   return (
@@ -221,6 +275,271 @@ export function StatsSection({ stats }) {
       <StatBlock label="紧急作业" tone="urgent" value={stats.urgent} />
       <StatBlock label="已完成" tone="completed" value={stats.completed} />
     </section>
+  )
+}
+
+function AssignmentQueryPanel({
+  draftQuery,
+  error,
+  resultCount,
+  totalCount,
+  onChange,
+  onReset,
+  onSubmit,
+}) {
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    onChange(name, value)
+  }
+
+  return (
+    <section className="assignment-query-panel">
+      <form className="assignment-query-form" onSubmit={onSubmit}>
+        <label>
+          <span>作业名称</span>
+          <input
+            name="title"
+            onChange={handleChange}
+            type="text"
+            value={draftQuery.title}
+          />
+        </label>
+
+        <label>
+          <span>作业描述</span>
+          <input
+            name="detail"
+            onChange={handleChange}
+            type="text"
+            value={draftQuery.detail}
+          />
+        </label>
+
+        <label>
+          <span>课程名</span>
+          <input
+            name="course"
+            onChange={handleChange}
+            type="text"
+            value={draftQuery.course}
+          />
+        </label>
+
+        <label>
+          <span>截止起始日期</span>
+          <input
+            name="startDate"
+            onChange={handleChange}
+            type="date"
+            value={draftQuery.startDate}
+          />
+        </label>
+
+        <label>
+          <span>截止结束日期</span>
+          <input
+            name="endDate"
+            onChange={handleChange}
+            type="date"
+            value={draftQuery.endDate}
+          />
+        </label>
+
+        <div className="assignment-query-actions">
+          <button className="form-submit-button" type="submit">
+            查询
+          </button>
+          <button className="form-reset-button" type="button" onClick={onReset}>
+            重置
+          </button>
+        </div>
+      </form>
+
+      <div className="assignment-query-summary">
+        <span>
+          查询结果 {resultCount} / {totalCount}
+        </span>
+        {error && <strong>{error}</strong>}
+      </div>
+    </section>
+  )
+}
+
+function AssignmentPagination({
+  currentPage,
+  onPageChange,
+  onPageSizeChange,
+  pageCount,
+  pageSize,
+  totalItems,
+}) {
+  if (totalItems === 0) {
+    return null
+  }
+
+  return (
+    <section className="assignment-pagination" aria-label="作业分页">
+      <div className="pagination-size-control">
+        <span>每页</span>
+        <select
+          aria-label="选择每页作业数量"
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(event.target.value)}
+        >
+          {PAGE_SIZE_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option === 'all' ? '全部' : option}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="pagination-page-list">
+        <button
+          disabled={currentPage <= 1}
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          上一页
+        </button>
+
+        {Array.from({ length: pageCount }, (_, index) => {
+          const page = index + 1
+
+          return (
+            <button
+              className={page === currentPage ? 'active' : ''}
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+            >
+              {page}
+            </button>
+          )
+        })}
+
+        <button
+          disabled={currentPage >= pageCount}
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          下一页
+        </button>
+      </div>
+
+      <span className="pagination-summary">
+        第 {currentPage} / {pageCount} 页，共 {totalItems} 项
+      </span>
+    </section>
+  )
+}
+
+export function ViewAssignments({
+  assignments,
+  now,
+  onDelete,
+  onToggleComplete,
+}) {
+  const [draftQuery, setDraftQuery] = useState(DEFAULT_QUERY)
+  const [appliedQuery, setAppliedQuery] = useState(DEFAULT_QUERY)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState('5')
+  const [queryError, setQueryError] = useState('')
+
+  const queriedAssignments = useMemo(
+    () => filterAssignmentsByQuery(assignments, appliedQuery),
+    [assignments, appliedQuery],
+  )
+  const stats = useMemo(
+    () => getAssignmentStats(queriedAssignments, now),
+    [queriedAssignments, now],
+  )
+  const pageCount =
+    pageSize === 'all'
+      ? 1
+      : Math.max(1, Math.ceil(queriedAssignments.length / Number(pageSize)))
+  const safeCurrentPage = Math.min(currentPage, pageCount)
+  const pagedAssignments = useMemo(() => {
+    if (pageSize === 'all') {
+      return queriedAssignments
+    }
+
+    const size = Number(pageSize)
+    const startIndex = (safeCurrentPage - 1) * size
+    return queriedAssignments.slice(startIndex, startIndex + size)
+  }, [pageSize, queriedAssignments, safeCurrentPage])
+
+  const handleQueryChange = (name, value) => {
+    setDraftQuery((currentQuery) => ({ ...currentQuery, [name]: value }))
+    setQueryError('')
+  }
+
+  const handleQuerySubmit = (event) => {
+    event.preventDefault()
+
+    if (
+      draftQuery.startDate &&
+      draftQuery.endDate &&
+      draftQuery.startDate > draftQuery.endDate
+    ) {
+      setQueryError('截止起始日期不能晚于截止结束日期。')
+      return
+    }
+
+    setAppliedQuery(draftQuery)
+    setCurrentPage(1)
+    setQueryError('')
+  }
+
+  const handleQueryReset = () => {
+    setDraftQuery(DEFAULT_QUERY)
+    setAppliedQuery(DEFAULT_QUERY)
+    setCurrentPage(1)
+    setQueryError('')
+  }
+
+  const handlePageSizeChange = (nextPageSize) => {
+    setPageSize(nextPageSize)
+    setCurrentPage(1)
+  }
+
+  return (
+    <div className="view-dashboard">
+      <StatsSection stats={stats} />
+      <AssignmentQueryPanel
+        draftQuery={draftQuery}
+        error={queryError}
+        resultCount={queriedAssignments.length}
+        totalCount={assignments.length}
+        onChange={handleQueryChange}
+        onReset={handleQueryReset}
+        onSubmit={handleQuerySubmit}
+      />
+
+      {queriedAssignments.length > 0 ? (
+        <>
+          <AssignmentList
+            assignments={pagedAssignments}
+            now={now}
+            onDelete={onDelete}
+            onToggleComplete={onToggleComplete}
+          />
+          <AssignmentPagination
+            currentPage={safeCurrentPage}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalItems={queriedAssignments.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
+      ) : (
+        <section className="assignment-empty-result">
+          <h2>没有符合条件的作业</h2>
+          <p>调整查询条件后再试一次。</p>
+        </section>
+      )}
+    </div>
   )
 }
 
