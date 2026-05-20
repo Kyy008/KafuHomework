@@ -8,7 +8,6 @@ function SearchBar({ keyword, onKeywordChange }) {
     <div className="search-bar">
       <input
         type="text"
-        placeholder="输入关键字搜索..."
         value={keyword}
         onChange={(e) => onKeywordChange(e.target.value)}
       />

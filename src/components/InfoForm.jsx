@@ -31,19 +31,16 @@ function InfoForm({ onAdd, editingItem, onSave, onCancelEdit }) {
         <input
           name="name"
           type="text"
-          placeholder="姓名"
           defaultValue={editingItem?.name ?? ''}
         />
         <input
           name="age"
           type="number"
-          placeholder="年龄"
           defaultValue={editingItem?.age ?? ''}
         />
         <input
           name="email"
           type="email"
-          placeholder="邮箱"
           defaultValue={editingItem?.email ?? ''}
         />
         <button type="submit">{editingItem ? '保存' : '添加'}</button>
