@@ -29,6 +29,14 @@ const DEFAULT_QUERY = {
 }
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '20', 'all']
+const SORT_FIELD_OPTIONS = [
+  { label: '截止日期', value: 'deadline' },
+  { label: '创建时间', value: 'createdAt' },
+]
+const SORT_ORDER_OPTIONS = [
+  { label: '升序', value: 'asc' },
+  { label: '降序', value: 'desc' },
+]
 
 const normalizeText = (value) => value.trim().toLowerCase()
 
@@ -72,6 +80,15 @@ const filterAssignmentsByQuery = (assignments, query) => {
     return true
   })
 }
+
+const sortAssignments = (assignments, field, order) =>
+  [...assignments].sort((leftAssignment, rightAssignment) => {
+    const leftTime = new Date(leftAssignment[field]).getTime()
+    const rightTime = new Date(rightAssignment[field]).getTime()
+    const result = leftTime - rightTime
+
+    return order === 'asc' ? result : -result
+  })
 
 function CheckIcon() {
   return (
@@ -307,10 +324,12 @@ export function StatsSection({ stats }) {
 function AssignmentQueryPanel({
   draftQuery,
   error,
-  resultCount,
-  totalCount,
+  sortField,
+  sortOrder,
   onChange,
   onReset,
+  onSortFieldChange,
+  onSortOrderChange,
   onSubmit,
 }) {
   const handleChange = (event) => {
@@ -381,11 +400,36 @@ function AssignmentQueryPanel({
         </div>
       </form>
 
-      <div className="assignment-query-summary">
-        <span>
-          查询结果 {resultCount} / {totalCount}
-        </span>
-        {error && <strong>{error}</strong>}
+      {error && <p className="assignment-query-error">{error}</p>}
+
+      <div className="assignment-sort-controls">
+        <label>
+          <span>排序字段</span>
+          <select
+            value={sortField}
+            onChange={(event) => onSortFieldChange(event.target.value)}
+          >
+            {SORT_FIELD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>排序方式</span>
+          <select
+            value={sortOrder}
+            onChange={(event) => onSortOrderChange(event.target.value)}
+          >
+            {SORT_ORDER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </section>
   )
@@ -474,6 +518,8 @@ export function ViewAssignments({
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState('5')
   const [queryError, setQueryError] = useState('')
+  const [sortField, setSortField] = useState('deadline')
+  const [sortOrder, setSortOrder] = useState('asc')
 
   const queriedAssignments = useMemo(
     () => filterAssignmentsByQuery(assignments, appliedQuery),
@@ -483,23 +529,27 @@ export function ViewAssignments({
     () => getAssignmentStats(queriedAssignments, now),
     [queriedAssignments, now],
   )
+  const sortedAssignments = useMemo(
+    () => sortAssignments(queriedAssignments, sortField, sortOrder),
+    [queriedAssignments, sortField, sortOrder],
+  )
   const pageCount =
     pageSize === 'all'
       ? 1
-      : Math.max(1, Math.ceil(queriedAssignments.length / Number(pageSize)))
+      : Math.max(1, Math.ceil(sortedAssignments.length / Number(pageSize)))
   const safeCurrentPage = Math.min(currentPage, pageCount)
-  const listAnimationKey = `${JSON.stringify(appliedQuery)}-${pageSize}-${safeCurrentPage}-${queriedAssignments
+  const listAnimationKey = `${JSON.stringify(appliedQuery)}-${sortField}-${sortOrder}-${pageSize}-${safeCurrentPage}-${sortedAssignments
     .map((assignment) => assignment.id)
     .join('-')}`
   const pagedAssignments = useMemo(() => {
     if (pageSize === 'all') {
-      return queriedAssignments
+      return sortedAssignments
     }
 
     const size = Number(pageSize)
     const startIndex = (safeCurrentPage - 1) * size
-    return queriedAssignments.slice(startIndex, startIndex + size)
-  }, [pageSize, queriedAssignments, safeCurrentPage])
+    return sortedAssignments.slice(startIndex, startIndex + size)
+  }, [pageSize, safeCurrentPage, sortedAssignments])
 
   useEffect(() => {
     if (!highlightedAssignmentId) {
@@ -565,6 +615,16 @@ export function ViewAssignments({
     setCurrentPage(1)
   }
 
+  const handleSortFieldChange = (nextSortField) => {
+    setSortField(nextSortField)
+    setCurrentPage(1)
+  }
+
+  const handleSortOrderChange = (nextSortOrder) => {
+    setSortOrder(nextSortOrder)
+    setCurrentPage(1)
+  }
+
   return (
     <div className="view-dashboard">
       <StatsSection stats={stats} />
@@ -572,10 +632,12 @@ export function ViewAssignments({
         <AssignmentQueryPanel
           draftQuery={draftQuery}
           error={queryError}
-          resultCount={queriedAssignments.length}
-          totalCount={assignments.length}
+          sortField={sortField}
+          sortOrder={sortOrder}
           onChange={handleQueryChange}
           onReset={handleQueryReset}
+          onSortFieldChange={handleSortFieldChange}
+          onSortOrderChange={handleSortOrderChange}
           onSubmit={handleQuerySubmit}
         />
 

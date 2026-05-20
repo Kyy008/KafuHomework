@@ -514,6 +514,7 @@
 }
 
 .assignment-query-form input,
+.assignment-sort-controls select,
 .pagination-size-control select {
   width: 100%;
   min-height: 40px;
@@ -533,6 +534,7 @@
 }
 
 .assignment-query-form input:focus,
+.assignment-sort-controls select:focus,
 .pagination-size-control select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(207, 217, 244, 0.14);
@@ -550,19 +552,28 @@
   padding: 0 14px;
 }
 
-.assignment-query-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
-  color: var(--muted-foreground);
+.assignment-query-error {
+  margin: 12px 0 0;
+  color: #ffc3ca;
   font-size: 13px;
   font-weight: 700;
+  animation: form-notice-enter 180ms ease both;
 }
 
-.assignment-query-summary strong {
-  color: #ffc3ca;
+.assignment-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.assignment-sort-controls label {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .assignment-list {
@@ -1537,7 +1548,6 @@
     grid-template-columns: 1fr;
   }
 
-  .assignment-query-summary,
   .assignment-pagination {
     align-items: flex-start;
     flex-direction: column;
