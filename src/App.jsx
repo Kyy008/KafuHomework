@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import {
   AssignmentForm,
@@ -20,9 +20,13 @@ function App() {
   const [activeView, setActiveView] = useState('view')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isEditMenuExpanded, setIsEditMenuExpanded] = useState(true)
+  const [highlightedAssignmentId, setHighlightedAssignmentId] = useState(null)
   const [now, setNow] = useState(() => new Date())
   const assignmentStore = useAssignmentStore()
   const minDeadline = useMemo(() => formatDateTimeInputValue(now), [now])
+  const clearHighlightedAssignment = useCallback(() => {
+    setHighlightedAssignmentId(null)
+  }, [])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -60,15 +64,18 @@ function App() {
           {activeView === 'view' ? (
             <ViewAssignments
               assignments={assignmentStore.assignments}
+              highlightedAssignmentId={highlightedAssignmentId}
               now={now}
               onDelete={assignmentStore.deleteAssignment}
+              onHighlightComplete={clearHighlightedAssignment}
               onToggleComplete={assignmentStore.toggleComplete}
             />
           ) : activeView === 'add' ? (
             <AssignmentForm
               minDeadline={minDeadline}
               onSubmit={(formData) => {
-                assignmentStore.addAssignment(formData)
+                const newAssignment = assignmentStore.addAssignment(formData)
+                setHighlightedAssignmentId(newAssignment.id)
                 setActiveView('view')
               }}
             />

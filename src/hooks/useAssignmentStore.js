@@ -118,6 +118,8 @@ export const useAssignmentStore = () => {
       newAssignment,
       ...currentAssignments,
     ])
+
+    return newAssignment
   }
 
   const deleteAssignment = (id) => {

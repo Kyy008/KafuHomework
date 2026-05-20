@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   calculateAssignmentProgress,
   getAssignmentStats,
@@ -111,7 +112,7 @@ function AssignmentActionButton({ children, danger = false, onClick }) {
 }
 
 function ConfirmDialog({ confirmTone = 'default', message, onCancel, onConfirm }) {
-  return (
+  return createPortal(
     <div className="confirm-dialog-backdrop" role="presentation">
       <div aria-modal="true" className="confirm-dialog" role="dialog">
         <p>{message}</p>
@@ -128,14 +129,22 @@ function ConfirmDialog({ confirmTone = 'default', message, onCancel, onConfirm }
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
-function AssignmentCard({ assignment, now, onDelete, onToggleComplete }) {
+function AssignmentCard({
+  assignment,
+  highlighted = false,
+  now,
+  onDelete,
+  onToggleComplete,
+}) {
   const status = getAssignmentStatus(assignment, now)
   const progress = calculateAssignmentProgress(assignment, now)
   const [pendingAction, setPendingAction] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const closeDialog = () => {
     setPendingAction(null)
@@ -143,7 +152,9 @@ function AssignmentCard({ assignment, now, onDelete, onToggleComplete }) {
 
   const confirmPendingAction = () => {
     if (pendingAction === 'delete') {
-      onDelete(assignment.id)
+      closeDialog()
+      setIsDeleting(true)
+      return
     }
 
     if (pendingAction === 'complete') {
@@ -153,9 +164,21 @@ function AssignmentCard({ assignment, now, onDelete, onToggleComplete }) {
     closeDialog()
   }
 
+  const handleAnimationEnd = (event) => {
+    if (isDeleting && event.animationName === 'assignment-card-leave') {
+      onDelete(assignment.id)
+    }
+  }
+
   return (
     <>
-      <article className="assignment-card">
+      <article
+        className={`assignment-card ${highlighted ? 'highlighted' : ''} ${
+          isDeleting ? 'deleting' : ''
+        }`}
+        data-assignment-id={assignment.id}
+        onAnimationEnd={handleAnimationEnd}
+      >
         <div className="assignment-card-main">
           <div className="assignment-card-heading">
             <div className="assignment-title-row">
@@ -234,7 +257,9 @@ function AssignmentCard({ assignment, now, onDelete, onToggleComplete }) {
 }
 
 export function AssignmentList({
+  animationKey = 'default',
   assignments,
+  highlightedAssignmentId = null,
   now,
   onDelete,
   onToggleComplete,
@@ -244,10 +269,11 @@ export function AssignmentList({
   }
 
   return (
-    <section className="assignment-list">
+    <section className="assignment-list" key={animationKey}>
       {assignments.map((assignment) => (
         <AssignmentCard
           assignment={assignment}
+          highlighted={assignment.id === highlightedAssignmentId}
           key={assignment.id}
           now={now}
           onDelete={onDelete}
@@ -436,10 +462,13 @@ function AssignmentPagination({
 
 export function ViewAssignments({
   assignments,
+  highlightedAssignmentId = null,
   now,
   onDelete,
+  onHighlightComplete,
   onToggleComplete,
 }) {
+  const scrollAreaRef = useRef(null)
   const [draftQuery, setDraftQuery] = useState(DEFAULT_QUERY)
   const [appliedQuery, setAppliedQuery] = useState(DEFAULT_QUERY)
   const [currentPage, setCurrentPage] = useState(1)
@@ -459,6 +488,9 @@ export function ViewAssignments({
       ? 1
       : Math.max(1, Math.ceil(queriedAssignments.length / Number(pageSize)))
   const safeCurrentPage = Math.min(currentPage, pageCount)
+  const listAnimationKey = `${JSON.stringify(appliedQuery)}-${pageSize}-${safeCurrentPage}-${queriedAssignments
+    .map((assignment) => assignment.id)
+    .join('-')}`
   const pagedAssignments = useMemo(() => {
     if (pageSize === 'all') {
       return queriedAssignments
@@ -468,6 +500,36 @@ export function ViewAssignments({
     const startIndex = (safeCurrentPage - 1) * size
     return queriedAssignments.slice(startIndex, startIndex + size)
   }, [pageSize, queriedAssignments, safeCurrentPage])
+
+  useEffect(() => {
+    if (!highlightedAssignmentId) {
+      return
+    }
+
+    const targetCard = scrollAreaRef.current?.querySelector(
+      `[data-assignment-id="${highlightedAssignmentId}"]`,
+    )
+
+    if (!targetCard) {
+      return
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      targetCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }, 120)
+
+    const finishTimer = window.setTimeout(() => {
+      onHighlightComplete?.()
+    }, 2600)
+
+    return () => {
+      window.clearTimeout(scrollTimer)
+      window.clearTimeout(finishTimer)
+    }
+  }, [highlightedAssignmentId, onHighlightComplete, pagedAssignments])
 
   const handleQueryChange = (name, value) => {
     setDraftQuery((currentQuery) => ({ ...currentQuery, [name]: value }))
@@ -506,39 +568,43 @@ export function ViewAssignments({
   return (
     <div className="view-dashboard">
       <StatsSection stats={stats} />
-      <AssignmentQueryPanel
-        draftQuery={draftQuery}
-        error={queryError}
-        resultCount={queriedAssignments.length}
-        totalCount={assignments.length}
-        onChange={handleQueryChange}
-        onReset={handleQueryReset}
-        onSubmit={handleQuerySubmit}
-      />
+      <div className="view-scroll-area" ref={scrollAreaRef}>
+        <AssignmentQueryPanel
+          draftQuery={draftQuery}
+          error={queryError}
+          resultCount={queriedAssignments.length}
+          totalCount={assignments.length}
+          onChange={handleQueryChange}
+          onReset={handleQueryReset}
+          onSubmit={handleQuerySubmit}
+        />
 
-      {queriedAssignments.length > 0 ? (
-        <>
-          <AssignmentList
-            assignments={pagedAssignments}
-            now={now}
-            onDelete={onDelete}
-            onToggleComplete={onToggleComplete}
-          />
-          <AssignmentPagination
-            currentPage={safeCurrentPage}
-            pageCount={pageCount}
-            pageSize={pageSize}
-            totalItems={queriedAssignments.length}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={handlePageSizeChange}
-          />
-        </>
-      ) : (
-        <section className="assignment-empty-result">
-          <h2>没有符合条件的作业</h2>
-          <p>调整查询条件后再试一次。</p>
-        </section>
-      )}
+        {queriedAssignments.length > 0 ? (
+          <>
+            <AssignmentList
+              animationKey={listAnimationKey}
+              assignments={pagedAssignments}
+              highlightedAssignmentId={highlightedAssignmentId}
+              now={now}
+              onDelete={onDelete}
+              onToggleComplete={onToggleComplete}
+            />
+            <AssignmentPagination
+              currentPage={safeCurrentPage}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              totalItems={queriedAssignments.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </>
+        ) : (
+          <section className="assignment-empty-result">
+            <h2>没有符合条件的作业</h2>
+            <p>调整查询条件后再试一次。</p>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
@@ -1008,6 +1074,7 @@ export function EditAssignmentView({
   onSelect,
 }) {
   const [savedAssignmentId, setSavedAssignmentId] = useState(null)
+  const successTimerRef = useRef(null)
   const selectedAssignment = useMemo(
     () =>
       assignments.find(
@@ -1030,6 +1097,12 @@ export function EditAssignmentView({
     }
   }, [assignments, editingAssignment, onSelect, selectedAssignment])
 
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(successTimerRef.current)
+    }
+  }, [])
+
   if (assignments.length === 0) {
     return (
       <section className="edit-assignment-view">
@@ -1050,6 +1123,10 @@ export function EditAssignmentView({
     onSave(updatedAssignment)
     onSelect(updatedAssignment)
     setSavedAssignmentId(updatedAssignment.id)
+    window.clearTimeout(successTimerRef.current)
+    successTimerRef.current = window.setTimeout(() => {
+      setSavedAssignmentId(null)
+    }, 2200)
   }
 
   return (
