@@ -316,6 +316,279 @@
   min-height: 100%;
 }
 
+.view-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(100%, 1120px);
+  margin: 0 auto;
+}
+
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  min-height: 92px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 16px 22px;
+  color: #fff;
+}
+
+.stat-card.active {
+  background: #57bfda;
+  border-color: #57bfda;
+}
+
+.stat-card.approaching {
+  background: #f5c84c;
+  border-color: #f5c84c;
+}
+
+.stat-card.urgent {
+  background: #ff0000;
+  border-color: #ff0000;
+}
+
+.stat-card.completed {
+  background: #4bae50;
+  border-color: #4bae50;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.assignment-list {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.assignment-card {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.assignment-card-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.assignment-card-heading {
+  min-width: 0;
+}
+
+.assignment-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.assignment-title-row h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.assignment-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.assignment-status.active {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+}
+
+.assignment-status.warning {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fde68a;
+}
+
+.assignment-status.danger {
+  border-color: rgba(251, 113, 133, 0.3);
+  background: rgba(251, 113, 133, 0.1);
+  color: #fecdd3;
+}
+
+.assignment-status.success {
+  border-color: rgba(75, 174, 80, 0.4);
+  background: rgba(75, 174, 80, 0.15);
+  color: #80d084;
+}
+
+.assignment-card-actions {
+  display: grid;
+  grid-template-columns: 92px 92px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: end;
+  gap: 8px;
+}
+
+.assignment-action-button,
+.complete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.assignment-action-button {
+  background: var(--panel-strong);
+  color: var(--foreground);
+  padding: 0 16px;
+}
+
+.assignment-action-button:hover {
+  background: var(--muted);
+}
+
+.assignment-action-button.danger {
+  border-color: rgba(255, 122, 138, 0.65);
+  background: rgba(255, 122, 138, 0.1);
+  color: #ffc3ca;
+}
+
+.assignment-action-button.danger:hover {
+  background: rgba(255, 122, 138, 0.16);
+}
+
+.complete-button {
+  border: 0;
+  background: #4bae50;
+  color: #fff;
+  padding: 0 16px;
+}
+
+.complete-button:hover {
+  background: #449b48;
+}
+
+.assignment-action-button:active,
+.complete-button:active {
+  transform: translateY(1px);
+}
+
+.complete-badge-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 36px;
+}
+
+.complete-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #4bae50;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.check-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.assignment-info-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.assignment-info-pill {
+  min-width: 0;
+  border-radius: 6px;
+  background: var(--panel-strong);
+  padding: 9px 12px;
+}
+
+.assignment-info-pill span,
+.assignment-info-pill strong {
+  display: block;
+}
+
+.assignment-info-pill span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.assignment-info-pill strong {
+  margin-top: 2px;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.assignment-progress-track {
+  height: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--muted);
+}
+
+.assignment-progress-bar {
+  height: 100%;
+  min-width: 4px;
+  border-radius: 6px;
+  transition:
+    width 220ms ease,
+    background-color 220ms ease;
+}
+
 @media (max-width: 760px) {
   .topbar {
     padding: 0 20px;
@@ -360,5 +633,35 @@
 
   .workspace {
     padding: 20px;
+  }
+
+  .view-dashboard {
+    gap: 20px;
+  }
+
+  .stats-section {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    min-height: 82px;
+    padding: 14px 18px;
+  }
+
+  .stat-card strong {
+    font-size: 28px;
+  }
+
+  .assignment-card-main {
+    flex-direction: column;
+  }
+
+  .assignment-card-actions {
+    justify-content: start;
+  }
+
+  .assignment-info-grid {
+    grid-template-columns: 1fr;
   }
 }

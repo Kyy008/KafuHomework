@@ -180,10 +180,170 @@ const EDIT_ACTIONS = [
   { id: 'edit', label: '编辑作业', icon: 'edit' },
 ]
 
+const HOUR_MS = 60 * 60 * 1000
+const URGENT_THRESHOLD_MS = 6 * HOUR_MS
+const APPROACHING_THRESHOLD_MS = 48 * HOUR_MS
+const PROGRESS_START_COLOR = '#4bae50'
+const PROGRESS_MID_COLOR = '#f5c84c'
+const PROGRESS_END_COLOR = '#ff0000'
+
+const STATUS_META = {
+  active: {
+    label: '进行中',
+    tone: 'active',
+  },
+  approaching: {
+    label: '临近',
+    tone: 'warning',
+  },
+  urgent: {
+    label: '紧急',
+    tone: 'danger',
+  },
+  completed: {
+    label: '已完成',
+    tone: 'success',
+  },
+}
+
 const getViewTitle = (activeView) => {
   if (activeView === 'add') return '添加作业'
   if (activeView === 'edit') return '编辑作业'
   return '查看作业'
+}
+
+const formatDateTime = (isoDate) =>
+  new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(isoDate))
+
+const getAssignmentStatus = (assignment, now = new Date()) => {
+  if (assignment.completed) {
+    return STATUS_META.completed
+  }
+
+  const deadlineTime = new Date(assignment.deadline).getTime()
+
+  if (Number.isNaN(deadlineTime)) {
+    return STATUS_META.active
+  }
+
+  const remainingMs = deadlineTime - now.getTime()
+
+  if (remainingMs <= URGENT_THRESHOLD_MS) {
+    return STATUS_META.urgent
+  }
+
+  if (remainingMs <= APPROACHING_THRESHOLD_MS) {
+    return STATUS_META.approaching
+  }
+
+  return STATUS_META.active
+}
+
+const getRemainingMs = (assignment, now) => {
+  const deadlineTime = new Date(assignment.deadline).getTime()
+
+  if (Number.isNaN(deadlineTime)) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  return deadlineTime - now.getTime()
+}
+
+const getAssignmentStats = (assignments, now) =>
+  assignments.reduce(
+    (stats, assignment) => {
+      if (assignment.completed) {
+        return { ...stats, completed: stats.completed + 1 }
+      }
+
+      const remainingMs = getRemainingMs(assignment, now)
+      const nextStats = { ...stats, active: stats.active + 1 }
+
+      if (remainingMs <= URGENT_THRESHOLD_MS) {
+        return { ...nextStats, urgent: nextStats.urgent + 1 }
+      }
+
+      if (
+        remainingMs > URGENT_THRESHOLD_MS &&
+        remainingMs <= APPROACHING_THRESHOLD_MS
+      ) {
+        return { ...nextStats, approaching: nextStats.approaching + 1 }
+      }
+
+      return nextStats
+    },
+    {
+      active: 0,
+      approaching: 0,
+      urgent: 0,
+      completed: 0,
+    },
+  )
+
+const clampPercentage = (value) => {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+
+  return Math.min(100, Math.max(0, value))
+}
+
+const calculateAssignmentProgress = (assignment, now = new Date()) => {
+  if (assignment.completed) {
+    return 100
+  }
+
+  const startTime = new Date(assignment.createdAt).getTime()
+  const deadlineTime = new Date(assignment.deadline).getTime()
+  const nowTime = now.getTime()
+
+  if (Number.isNaN(startTime) || Number.isNaN(deadlineTime)) {
+    return 0
+  }
+
+  const totalMs = deadlineTime - startTime
+
+  if (totalMs <= 0) {
+    return nowTime >= deadlineTime ? 100 : 0
+  }
+
+  return clampPercentage(((nowTime - startTime) / totalMs) * 100)
+}
+
+const hexToRgb = (hex) => {
+  const normalizedHex = hex.replace('#', '')
+
+  return {
+    red: Number.parseInt(normalizedHex.slice(0, 2), 16),
+    green: Number.parseInt(normalizedHex.slice(2, 4), 16),
+    blue: Number.parseInt(normalizedHex.slice(4, 6), 16),
+  }
+}
+
+const mixRgb = (from, to, amount) => ({
+  red: Math.round(from.red + (to.red - from.red) * amount),
+  green: Math.round(from.green + (to.green - from.green) * amount),
+  blue: Math.round(from.blue + (to.blue - from.blue) * amount),
+})
+
+const rgbToCss = ({ blue, green, red }) => `rgb(${red} ${green} ${blue})`
+
+const getProgressColor = (progress) => {
+  const clampedProgress = clampPercentage(progress)
+  const startColor = hexToRgb(PROGRESS_START_COLOR)
+  const midColor = hexToRgb(PROGRESS_MID_COLOR)
+  const endColor = hexToRgb(PROGRESS_END_COLOR)
+
+  if (clampedProgress <= 50) {
+    return rgbToCss(mixRgb(startColor, midColor, clampedProgress / 50))
+  }
+
+  return rgbToCss(mixRgb(midColor, endColor, (clampedProgress - 50) / 50))
 }
 
 function ChevronIcon({ className = '' }) {
@@ -287,11 +447,210 @@ function TreeButton({ active, collapsed, icon, label, onClick }) {
   )
 }
 
+function CheckIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="check-icon"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2.5"
+      viewBox="0 0 24 24"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
+function InfoPill({ label, value }) {
+  return (
+    <div className="assignment-info-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function AssignmentActionButton({ children, danger = false, onClick }) {
+  return (
+    <button
+      className={`assignment-action-button ${danger ? 'danger' : ''}`}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+    </button>
+  )
+}
+
+function AssignmentCard({ assignment, now, onDelete, onToggleComplete }) {
+  const status = getAssignmentStatus(assignment, now)
+  const progress = calculateAssignmentProgress(assignment, now)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [isConfirmingComplete, setIsConfirmingComplete] = useState(false)
+
+  return (
+    <article className="assignment-card">
+      <div className="assignment-card-main">
+        <div className="assignment-card-heading">
+          <div className="assignment-title-row">
+            <h2>{assignment.title}</h2>
+            <span className={`assignment-status ${status.tone}`}>
+              {status.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="assignment-card-actions">
+          {isConfirmingDelete ? (
+            <>
+              <AssignmentActionButton
+                onClick={() => setIsConfirmingDelete(false)}
+              >
+                取消
+              </AssignmentActionButton>
+              <AssignmentActionButton
+                danger
+                onClick={() => onDelete(assignment.id)}
+              >
+                确认删除
+              </AssignmentActionButton>
+            </>
+          ) : (
+            <AssignmentActionButton
+              danger
+              onClick={() => {
+                setIsConfirmingComplete(false)
+                setIsConfirmingDelete(true)
+              }}
+            >
+              删除作业
+            </AssignmentActionButton>
+          )}
+
+          {assignment.completed ? (
+            <span className="complete-badge-slot">
+              <span className="complete-badge" title="已完成" aria-label="已完成">
+                <CheckIcon />
+              </span>
+            </span>
+          ) : isConfirmingComplete ? (
+            <>
+              <AssignmentActionButton
+                onClick={() => setIsConfirmingComplete(false)}
+              >
+                取消
+              </AssignmentActionButton>
+              <button
+                className="complete-button"
+                onClick={() => onToggleComplete(assignment.id)}
+                type="button"
+              >
+                确认完成
+              </button>
+            </>
+          ) : (
+            <button
+              className="complete-button"
+              onClick={() => {
+                setIsConfirmingDelete(false)
+                setIsConfirmingComplete(true)
+              }}
+              type="button"
+            >
+              标记完成
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="assignment-info-grid">
+        <InfoPill label="作业详情" value={assignment.detail} />
+        <InfoPill label="课程" value={assignment.course} />
+        <InfoPill label="截止日期" value={formatDateTime(assignment.deadline)} />
+      </div>
+
+      {!assignment.completed && (
+        <div
+          className="assignment-progress-track"
+          aria-label={`作业进度 ${Math.round(progress)}%`}
+          title={`作业进度 ${Math.round(progress)}%`}
+        >
+          <div
+            className="assignment-progress-bar"
+            style={{
+              width: `${progress}%`,
+              backgroundColor: getProgressColor(progress),
+            }}
+          />
+        </div>
+      )}
+    </article>
+  )
+}
+
+function AssignmentList({ assignments, now, onDelete, onToggleComplete }) {
+  if (assignments.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="assignment-list">
+      {assignments.map((assignment) => (
+        <AssignmentCard
+          assignment={assignment}
+          key={assignment.id}
+          now={now}
+          onDelete={onDelete}
+          onToggleComplete={onToggleComplete}
+        />
+      ))}
+    </section>
+  )
+}
+
+function StatBlock({ label, tone, value }) {
+  return (
+    <div className={`stat-card ${tone}`}>
+      <p>{label}</p>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function StatsSection({ stats }) {
+  return (
+    <section className="stats-section">
+      <StatBlock label="进行中" tone="active" value={stats.active} />
+      <StatBlock label="临近截止" tone="approaching" value={stats.approaching} />
+      <StatBlock label="紧急作业" tone="urgent" value={stats.urgent} />
+      <StatBlock label="已完成" tone="completed" value={stats.completed} />
+    </section>
+  )
+}
+
 function App() {
   const [activeView, setActiveView] = useState('view')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isEditMenuExpanded, setIsEditMenuExpanded] = useState(true)
+  const [now, setNow] = useState(() => new Date())
   const assignmentStore = useAssignmentStore()
+  const assignmentStats = useMemo(
+    () => getAssignmentStats(assignmentStore.assignments, now),
+    [assignmentStore.assignments, now],
+  )
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(new Date())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [])
 
   return (
     <div
@@ -388,7 +747,19 @@ function App() {
         </aside>
 
         <main className="workspace" aria-label={getViewTitle(activeView)}>
-          <section className="empty-view" />
+          {activeView === 'view' ? (
+            <div className="view-dashboard">
+              <StatsSection stats={assignmentStats} />
+              <AssignmentList
+                assignments={assignmentStore.filteredAssignments}
+                now={now}
+                onDelete={assignmentStore.deleteAssignment}
+                onToggleComplete={assignmentStore.toggleComplete}
+              />
+            </div>
+          ) : (
+            <section className="empty-view" />
+          )}
         </main>
       </div>
     </div>
