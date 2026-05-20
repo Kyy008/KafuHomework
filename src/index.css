@@ -2,8 +2,8 @@
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
-  color: #213547;
-  background-color: #ffffff;
+  color: #f5f6ef;
+  background-color: #050805;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,4 +18,12 @@
 
 body {
   min-height: 100vh;
+  background: #050805;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
