@@ -1,0 +1,69 @@
+/* ============================================================
+   信息管理系统 —— 样式模板
+   请在此文件中编写你的样式
+   ============================================================ */
+
+/* ---------- 整体布局 ---------- */
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.app h1 {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* ---------- 搜索栏 ---------- */
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* ---------- 表单区域 ---------- */
+/* TODO: 为 .info-form 编写样式 */
+/* 提示：设置内边距、边框、圆角、背景色，让表单区域有明显的视觉区分 */
+
+/* TODO: 为表单内的 input 编写样式 */
+/* 提示：统一输入框的尺寸、间距 */
+
+/* TODO: 为表单内的 button 编写样式 */
+/* 提示："添加"按钮与"取消"按钮可用不同颜色区分 */
+
+/* ---------- 信息列表（表格） ---------- */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.info-table th,
+.info-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.info-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+/* TODO: 为操作按钮列 .actions 编写样式 */
+/* 提示：编辑、删除按钮可用不同颜色区分，适当加间距 */
+
+/* ---------- 空状态提示 ---------- */
+.empty-tip {
+  text-align: center;
+  color: #999;
+  margin-top: 32px;
+}
