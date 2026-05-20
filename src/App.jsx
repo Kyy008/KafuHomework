@@ -146,7 +146,11 @@ const useAssignmentStore = () => {
           : assignment,
       ),
     )
-    setEditingAssignment(null)
+    setEditingAssignment((currentAssignment) =>
+      currentAssignment?.id === updatedAssignment.id
+        ? { ...currentAssignment, ...updatedAssignment }
+        : currentAssignment,
+    )
   }
 
   const toggleComplete = (id) => {
@@ -215,6 +219,28 @@ const getViewTitle = (activeView) => {
 const formatDateTimeInputValue = (date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
   return offsetDate.toISOString().slice(0, 16)
+}
+
+const getAssignmentFormData = (assignment) => {
+  if (!assignment) {
+    return {
+      title: '',
+      detail: '',
+      course: '',
+      deadline: '',
+    }
+  }
+
+  const deadlineDate = new Date(assignment.deadline)
+
+  return {
+    title: assignment.title,
+    detail: assignment.detail,
+    course: assignment.course,
+    deadline: Number.isNaN(deadlineDate.getTime())
+      ? ''
+      : formatDateTimeInputValue(deadlineDate),
+  }
 }
 
 const parseLocalDateTimeValue = (value) => {
@@ -1026,13 +1052,11 @@ function TimePicker({ minDeadline, onChange, value }) {
   )
 }
 
-function AssignmentForm({ minDeadline, onSubmit }) {
-  const [formData, setFormData] = useState({
-    title: '',
-    detail: '',
-    course: '',
-    deadline: '',
-  })
+function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
+  const isEditing = Boolean(assignment)
+  const [formData, setFormData] = useState(() =>
+    getAssignmentFormData(assignment),
+  )
   const [error, setError] = useState('')
 
   const handleChange = (event) => {
@@ -1085,12 +1109,7 @@ function AssignmentForm({ minDeadline, onSubmit }) {
   }
 
   const handleReset = () => {
-    setFormData({
-      title: '',
-      detail: '',
-      course: '',
-      deadline: '',
-    })
+    setFormData(getAssignmentFormData(assignment))
     setError('')
   }
 
@@ -1151,13 +1170,140 @@ function AssignmentForm({ minDeadline, onSubmit }) {
 
         <div className="assignment-form-actions">
           <button className="form-submit-button" type="submit">
-            添加作业
+            {isEditing ? '保存修改' : '添加作业'}
           </button>
           <button className="form-reset-button" type="button" onClick={handleReset}>
-            重置
+            {isEditing ? '还原' : '重置'}
           </button>
         </div>
       </form>
+    </section>
+  )
+}
+
+function EditAssignmentListItem({ active, assignment, now, onSelect }) {
+  const status = getAssignmentStatus(assignment, now)
+
+  return (
+    <button
+      className={`edit-assignment-item ${active ? 'active' : ''}`}
+      onClick={() => onSelect(assignment)}
+      type="button"
+    >
+      <div className="edit-assignment-item-title">
+        <strong>{assignment.title}</strong>
+        <span className={`assignment-status ${status.tone}`}>
+          {status.label}
+        </span>
+      </div>
+      <div className="edit-assignment-item-meta">
+        <span>{assignment.course || '未填写课程'}</span>
+        <span>{formatDateTime(assignment.deadline)}</span>
+      </div>
+    </button>
+  )
+}
+
+function EditAssignmentView({
+  assignments,
+  editingAssignment,
+  minDeadline,
+  now,
+  onSave,
+  onSelect,
+}) {
+  const [savedAssignmentId, setSavedAssignmentId] = useState(null)
+  const selectedAssignment = useMemo(
+    () =>
+      assignments.find(
+        (assignment) => assignment.id === editingAssignment?.id,
+      ) ?? null,
+    [assignments, editingAssignment],
+  )
+
+  useEffect(() => {
+    if (assignments.length === 0) {
+      if (editingAssignment) {
+        onSelect(null)
+      }
+
+      return
+    }
+
+    if (!selectedAssignment) {
+      onSelect(assignments[0])
+    }
+  }, [assignments, editingAssignment, onSelect, selectedAssignment])
+
+  if (assignments.length === 0) {
+    return (
+      <section className="edit-assignment-view">
+        <div className="edit-empty-panel">
+          <h2>暂无可编辑作业</h2>
+          <p>添加作业后，可以在这里修改作业名称、详情、课程和截止时间。</p>
+        </div>
+      </section>
+    )
+  }
+
+  const handleSave = (formData) => {
+    const updatedAssignment = {
+      ...selectedAssignment,
+      ...formData,
+    }
+
+    onSave(updatedAssignment)
+    onSelect(updatedAssignment)
+    setSavedAssignmentId(updatedAssignment.id)
+  }
+
+  return (
+    <section className="edit-assignment-view">
+      <aside className="edit-assignment-list-panel" aria-label="可编辑作业列表">
+        <div className="edit-panel-heading">
+          <h2>选择作业</h2>
+          <span>{assignments.length} 项</span>
+        </div>
+
+        <div className="edit-assignment-list">
+          {assignments.map((assignment) => (
+            <EditAssignmentListItem
+              active={assignment.id === selectedAssignment?.id}
+              assignment={assignment}
+              key={assignment.id}
+              now={now}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      </aside>
+
+      <div className="edit-assignment-form-area">
+        <div className="edit-panel-heading">
+          <h2>编辑内容</h2>
+          {selectedAssignment && (
+            <span>{selectedAssignment.completed ? '已完成' : '未完成'}</span>
+          )}
+        </div>
+
+        {savedAssignmentId === selectedAssignment?.id && (
+          <p className="form-success">保存成功。</p>
+        )}
+
+        {selectedAssignment ? (
+          <AssignmentForm
+            assignment={selectedAssignment}
+            key={selectedAssignment.id}
+            minDeadline={minDeadline}
+            onSubmit={handleSave}
+          />
+        ) : (
+          <div className="edit-empty-panel">
+            <h2>请选择作业</h2>
+            <p>从左侧列表中选择一个作业后即可编辑。</p>
+          </div>
+        )}
+      </div>
     </section>
   )
 }
@@ -1296,6 +1442,15 @@ function App() {
                 assignmentStore.addAssignment(formData)
                 setActiveView('view')
               }}
+            />
+          ) : activeView === 'edit' ? (
+            <EditAssignmentView
+              assignments={assignmentStore.assignments}
+              editingAssignment={assignmentStore.editingAssignment}
+              minDeadline={minDeadline}
+              now={now}
+              onSave={assignmentStore.saveAssignment}
+              onSelect={assignmentStore.setEditingAssignment}
             />
           ) : (
             <section className="empty-view" />
