@@ -40,7 +40,8 @@ const SORT_ORDER_OPTIONS = [
 ]
 const DRAG_AUTO_SCROLL_DELAY_MS = 500
 const DRAG_AUTO_SCROLL_EDGE_SIZE = 80
-const DRAG_AUTO_SCROLL_MAX_SPEED = 18
+const DRAG_AUTO_SCROLL_MIN_SPEED = 1
+const DRAG_AUTO_SCROLL_MAX_SPEED = 6
 
 const normalizeText = (value) => value.trim().toLowerCase()
 
@@ -597,7 +598,10 @@ export function AssignmentList({
         Math.max(0, distanceIntoEdge / DRAG_AUTO_SCROLL_EDGE_SIZE),
       )
 
-      return 4 + edgeRatio * DRAG_AUTO_SCROLL_MAX_SPEED
+      return (
+        DRAG_AUTO_SCROLL_MIN_SPEED +
+        edgeRatio * DRAG_AUTO_SCROLL_MAX_SPEED
+      )
     }
 
     const runAutoScroll = () => {
