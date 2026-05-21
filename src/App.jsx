@@ -66,6 +66,7 @@ function App() {
               minDeadline={minDeadline}
               now={now}
               onDelete={assignmentStore.deleteAssignment}
+              onReorder={assignmentStore.reorderAssignments}
               onSave={assignmentStore.saveAssignment}
               onHighlightComplete={clearHighlightedAssignment}
               onToggleComplete={assignmentStore.toggleComplete}

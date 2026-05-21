@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   calculateAssignmentProgress,
@@ -30,6 +30,7 @@ const DEFAULT_QUERY = {
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '20', 'all']
 const SORT_FIELD_OPTIONS = [
+  { label: '自定义排序', value: 'custom' },
   { label: '截止日期', value: 'deadline' },
   { label: '创建时间', value: 'createdAt' },
 ]
@@ -81,10 +82,23 @@ const filterAssignmentsByQuery = (assignments, query) => {
   })
 }
 
+const getCustomOrder = (assignment) =>
+  Number.isFinite(assignment.order) ? assignment.order : Number.MAX_SAFE_INTEGER
+
 const sortAssignments = (assignments, field, order) =>
   [...assignments].sort((leftAssignment, rightAssignment) => {
-    const leftTime = new Date(leftAssignment[field]).getTime()
-    const rightTime = new Date(rightAssignment[field]).getTime()
+    if (field === 'custom') {
+      const orderResult =
+        getCustomOrder(leftAssignment) - getCustomOrder(rightAssignment)
+
+      if (orderResult !== 0) {
+        return orderResult
+      }
+    }
+
+    const comparedField = field === 'custom' ? 'createdAt' : field
+    const leftTime = new Date(leftAssignment[comparedField]).getTime()
+    const rightTime = new Date(rightAssignment[comparedField]).getTime()
     const result = leftTime - rightTime
 
     return order === 'asc' ? result : -result
@@ -199,8 +213,11 @@ function ConfirmDialog({ confirmTone = 'default', message, onCancel, onConfirm }
 
 function AssignmentCard({
   assignment,
+  canReorder = false,
   highlighted = false,
+  isDragging = false,
   now,
+  onDragStart,
   onDelete,
   onEdit,
   onToggleComplete,
@@ -239,78 +256,99 @@ function AssignmentCard({
       <article
         className={`assignment-card ${highlighted ? 'highlighted' : ''} ${
           isDeleting ? 'deleting' : ''
+        } ${isDragging ? 'dragging' : ''} ${
+          canReorder ? 'reorderable' : ''
         }`}
         data-assignment-id={assignment.id}
         onAnimationEnd={handleAnimationEnd}
       >
-        <div className="assignment-card-main">
-          <div className="assignment-card-heading">
-            <div className="assignment-title-row">
-              <h2>{assignment.title}</h2>
-              <span className={`assignment-status ${status.tone}`}>
-                {status.label}
-              </span>
+        {canReorder && (
+          <button
+            aria-label={`拖动作业 ${assignment.title} 排序`}
+            className="assignment-drag-handle"
+            onPointerDown={(event) => onDragStart(assignment.id, event)}
+            title="拖动排序"
+            type="button"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        )}
+
+        <div className="assignment-card-content">
+          <div className="assignment-card-main">
+            <div className="assignment-card-heading">
+              <div className="assignment-title-row">
+                <h2>{assignment.title}</h2>
+                <span className={`assignment-status ${status.tone}`}>
+                  {status.label}
+                </span>
+              </div>
+            </div>
+
+            <div className="assignment-card-actions">
+              <AssignmentActionButton
+                variant="edit"
+                onClick={() => onEdit(assignment)}
+              >
+                编辑作业
+              </AssignmentActionButton>
+
+              <AssignmentActionButton
+                danger
+                onClick={() => setPendingAction('delete')}
+              >
+                删除作业
+              </AssignmentActionButton>
+
+              {assignment.completed ? (
+                <span className="complete-badge-slot">
+                  <span
+                    className="complete-badge"
+                    title="已完成"
+                    aria-label="已完成"
+                  >
+                    <CheckIcon />
+                  </span>
+                </span>
+              ) : (
+                <button
+                  className="complete-button"
+                  onClick={() => setPendingAction('complete')}
+                  type="button"
+                >
+                  标记完成
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="assignment-card-actions">
-            <AssignmentActionButton
-              variant="edit"
-              onClick={() => onEdit(assignment)}
-            >
-              编辑作业
-            </AssignmentActionButton>
-
-            <AssignmentActionButton
-              danger
-              onClick={() => setPendingAction('delete')}
-            >
-              删除作业
-            </AssignmentActionButton>
-
-            {assignment.completed ? (
-              <span className="complete-badge-slot">
-                <span
-                  className="complete-badge"
-                  title="已完成"
-                  aria-label="已完成"
-                >
-                  <CheckIcon />
-                </span>
-              </span>
-            ) : (
-              <button
-                className="complete-button"
-                onClick={() => setPendingAction('complete')}
-                type="button"
-              >
-                标记完成
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="assignment-info-grid">
-          <InfoPill label="作业详情" value={assignment.detail} />
-          <InfoPill label="课程" value={assignment.course} />
-          <InfoPill label="截止日期" value={formatDateTime(assignment.deadline)} />
-        </div>
-
-        {!assignment.completed && (
-          <div
-            className="assignment-progress-track"
-            aria-label={`作业进度 ${Math.round(progress)}%`}
-            title={`作业进度 ${Math.round(progress)}%`}
-          >
-            <div
-              className="assignment-progress-bar"
-              style={{
-                width: `${progress}%`,
-                backgroundColor: getProgressColor(progress),
-              }}
+          <div className="assignment-info-grid">
+            <InfoPill label="作业详情" value={assignment.detail} />
+            <InfoPill label="课程" value={assignment.course} />
+            <InfoPill
+              label="截止日期"
+              value={formatDateTime(assignment.deadline)}
             />
           </div>
-        )}
+
+          {!assignment.completed && (
+            <div
+              className="assignment-progress-track"
+              aria-label={`作业进度 ${Math.round(progress)}%`}
+              title={`作业进度 ${Math.round(progress)}%`}
+            >
+              <div
+                className="assignment-progress-bar"
+                style={{
+                  width: `${progress}%`,
+                  backgroundColor: getProgressColor(progress),
+                }}
+              />
+            </div>
+          )}
+        </div>
       </article>
 
       {pendingAction && (
@@ -330,24 +368,229 @@ function AssignmentCard({
 export function AssignmentList({
   animationKey = 'default',
   assignments,
+  canReorder = false,
   highlightedAssignmentId = null,
   now,
   onDelete,
   onEdit,
+  onReorder,
   onToggleComplete,
 }) {
+  const listRef = useRef(null)
+  const cardPositionsRef = useRef(new Map())
+  const cardAnimationFrameRef = useRef(null)
+  const orderedIdsRef = useRef([])
+  const [draggingAssignmentId, setDraggingAssignmentId] = useState(null)
+  const [dragOrderIds, setDragOrderIds] = useState(null)
+  const isReordering = canReorder && draggingAssignmentId !== null
+
+  const recordCardPositions = () => {
+    const nextPositions = new Map()
+
+    listRef.current
+      ?.querySelectorAll('[data-assignment-id]')
+      .forEach((cardElement) => {
+        nextPositions.set(
+          cardElement.dataset.assignmentId,
+          cardElement.getBoundingClientRect().top,
+        )
+      })
+
+    cardPositionsRef.current = nextPositions
+  }
+
+  useLayoutEffect(() => {
+    if (!isReordering) {
+      if (cardAnimationFrameRef.current) {
+        window.cancelAnimationFrame(cardAnimationFrameRef.current)
+        cardAnimationFrameRef.current = null
+      }
+
+      listRef.current?.querySelectorAll('[data-assignment-id]').forEach(
+        (cardElement) => {
+          cardElement.style.transition = ''
+          cardElement.style.transform = ''
+        },
+      )
+      cardPositionsRef.current = new Map()
+      return undefined
+    }
+
+    if (!dragOrderIds) {
+      return undefined
+    }
+
+    const previousPositions = cardPositionsRef.current
+
+    if (previousPositions.size === 0) {
+      return undefined
+    }
+
+    if (cardAnimationFrameRef.current) {
+      window.cancelAnimationFrame(cardAnimationFrameRef.current)
+    }
+
+    const movedCards = Array.from(
+      listRef.current?.querySelectorAll('[data-assignment-id]') ?? [],
+    )
+      .map((cardElement) => {
+        const previousTop = previousPositions.get(
+          cardElement.dataset.assignmentId,
+        )
+
+        if (typeof previousTop !== 'number') {
+          return null
+        }
+
+        const currentTop = cardElement.getBoundingClientRect().top
+        const deltaY = previousTop - currentTop
+
+        if (Math.abs(deltaY) < 1) {
+          return null
+        }
+
+        const isActiveCard =
+          cardElement.dataset.assignmentId === draggingAssignmentId
+        cardElement.style.transition = 'none'
+        cardElement.style.transform = `translateY(${deltaY}px)${
+          isActiveCard ? ' scale(0.995)' : ''
+        }`
+
+        return {
+          element: cardElement,
+          resetTransform: isActiveCard ? 'scale(0.995)' : '',
+        }
+      })
+      .filter(Boolean)
+
+    cardAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      movedCards.forEach(({ element, resetTransform }) => {
+        element.style.transition = ''
+        element.style.transform = resetTransform
+      })
+      cardAnimationFrameRef.current = null
+    })
+
+    return () => {
+      if (cardAnimationFrameRef.current) {
+        window.cancelAnimationFrame(cardAnimationFrameRef.current)
+      }
+    }
+  }, [dragOrderIds, draggingAssignmentId, isReordering])
+
+  useEffect(() => {
+    if (!isReordering) {
+      return undefined
+    }
+
+    const handlePointerMove = (event) => {
+      event.preventDefault()
+
+      if (!listRef.current) {
+        return
+      }
+
+      const currentIds = orderedIdsRef.current
+
+      if (currentIds.length === 0) {
+        return
+      }
+
+      const draggingId = String(draggingAssignmentId)
+      const fromIndex = currentIds.indexOf(draggingId)
+
+      if (fromIndex === -1) {
+        return
+      }
+
+      const staticCards = Array.from(
+        listRef.current.querySelectorAll('[data-assignment-id]'),
+      )
+        .filter((cardElement) => cardElement.dataset.assignmentId !== draggingId)
+        .map((cardElement) => {
+          const rect = cardElement.getBoundingClientRect()
+
+          return {
+            id: cardElement.dataset.assignmentId,
+            centerY: rect.top + rect.height / 2,
+          }
+        })
+
+      const nextIndexCandidate = staticCards.findIndex(
+        (card) => event.clientY < card.centerY,
+      )
+      const toIndex =
+        nextIndexCandidate === -1 ? staticCards.length : nextIndexCandidate
+
+      if (toIndex === fromIndex) {
+        return
+      }
+
+      recordCardPositions()
+      const nextIds = currentIds.filter((id) => id !== draggingId)
+      nextIds.splice(toIndex, 0, draggingId)
+      orderedIdsRef.current = nextIds
+      setDragOrderIds(nextIds)
+    }
+
+    const handlePointerEnd = () => {
+      onReorder?.(orderedIdsRef.current)
+      setDraggingAssignmentId(null)
+      setDragOrderIds(null)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove, {
+      passive: false,
+    })
+    window.addEventListener('pointerup', handlePointerEnd)
+    window.addEventListener('pointercancel', handlePointerEnd)
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerEnd)
+      window.removeEventListener('pointercancel', handlePointerEnd)
+    }
+  }, [draggingAssignmentId, isReordering, onReorder])
+
   if (assignments.length === 0) {
     return null
   }
 
+  const assignmentById = new Map(
+    assignments.map((assignment) => [String(assignment.id), assignment]),
+  )
+  const displayedAssignments = isReordering
+    ? (dragOrderIds?.map((id) => assignmentById.get(id)).filter(Boolean) ??
+      assignments)
+    : assignments
+
+  const handleDragStart = (assignmentId, event) => {
+    if (!canReorder) {
+      return
+    }
+
+    event.preventDefault()
+    const nextOrderedIds = assignments.map((assignment) => String(assignment.id))
+    orderedIdsRef.current = nextOrderedIds
+    setDragOrderIds(nextOrderedIds)
+    setDraggingAssignmentId(String(assignmentId))
+  }
+
   return (
-    <section className="assignment-list" key={animationKey}>
-      {assignments.map((assignment) => (
+    <section
+      className={`assignment-list ${canReorder ? 'reorder-enabled' : ''}`}
+      key={animationKey}
+      ref={listRef}
+    >
+      {displayedAssignments.map((assignment) => (
         <AssignmentCard
           assignment={assignment}
+          canReorder={canReorder}
           highlighted={assignment.id === highlightedAssignmentId}
+          isDragging={String(assignment.id) === draggingAssignmentId}
           key={assignment.id}
           now={now}
+          onDragStart={handleDragStart}
           onDelete={onDelete}
           onEdit={onEdit}
           onToggleComplete={onToggleComplete}
@@ -473,19 +716,21 @@ function AssignmentQueryPanel({
           </select>
         </label>
 
-        <label>
-          <span>排序方式</span>
-          <select
-            value={sortOrder}
-            onChange={(event) => onSortOrderChange(event.target.value)}
-          >
-            {SORT_ORDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {sortField !== 'custom' && (
+          <label>
+            <span>排序方式</span>
+            <select
+              value={sortOrder}
+              onChange={(event) => onSortOrderChange(event.target.value)}
+            >
+              {SORT_ORDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
     </section>
   )
@@ -567,6 +812,7 @@ export function ViewAssignments({
   now,
   onDelete,
   onHighlightComplete,
+  onReorder,
   onSave,
   onToggleComplete,
 }) {
@@ -579,6 +825,8 @@ export function ViewAssignments({
   const [queryError, setQueryError] = useState('')
   const [sortField, setSortField] = useState('deadline')
   const [sortOrder, setSortOrder] = useState('asc')
+  const isCustomSort = sortField === 'custom'
+  const effectivePageSize = isCustomSort ? 'all' : pageSize
 
   const queriedAssignments = useMemo(
     () => filterAssignmentsByQuery(assignments, appliedQuery),
@@ -593,22 +841,25 @@ export function ViewAssignments({
     [queriedAssignments, sortField, sortOrder],
   )
   const pageCount =
-    pageSize === 'all'
+    effectivePageSize === 'all'
       ? 1
-      : Math.max(1, Math.ceil(sortedAssignments.length / Number(pageSize)))
+      : Math.max(
+          1,
+          Math.ceil(sortedAssignments.length / Number(effectivePageSize)),
+        )
   const safeCurrentPage = Math.min(currentPage, pageCount)
-  const listAnimationKey = `${JSON.stringify(appliedQuery)}-${sortField}-${sortOrder}-${pageSize}-${safeCurrentPage}-${sortedAssignments
+  const listAnimationKey = `${JSON.stringify(appliedQuery)}-${sortField}-${sortOrder}-${effectivePageSize}-${safeCurrentPage}-${sortedAssignments
     .map((assignment) => assignment.id)
     .join('-')}`
   const pagedAssignments = useMemo(() => {
-    if (pageSize === 'all') {
+    if (effectivePageSize === 'all') {
       return sortedAssignments
     }
 
-    const size = Number(pageSize)
+    const size = Number(effectivePageSize)
     const startIndex = (safeCurrentPage - 1) * size
     return sortedAssignments.slice(startIndex, startIndex + size)
-  }, [pageSize, safeCurrentPage, sortedAssignments])
+  }, [effectivePageSize, safeCurrentPage, sortedAssignments])
 
   useEffect(() => {
     if (!highlightedAssignmentId) {
@@ -670,12 +921,16 @@ export function ViewAssignments({
   }
 
   const handlePageSizeChange = (nextPageSize) => {
-    setPageSize(nextPageSize)
+    setPageSize(isCustomSort ? 'all' : nextPageSize)
     setCurrentPage(1)
   }
 
   const handleSortFieldChange = (nextSortField) => {
     setSortField(nextSortField)
+    if (nextSortField === 'custom') {
+      setSortOrder('asc')
+      setPageSize('all')
+    }
     setCurrentPage(1)
   }
 
@@ -714,16 +969,18 @@ export function ViewAssignments({
             <AssignmentList
               animationKey={listAnimationKey}
               assignments={pagedAssignments}
+              canReorder={isCustomSort}
               highlightedAssignmentId={highlightedAssignmentId}
               now={now}
               onDelete={onDelete}
               onEdit={setEditingAssignment}
+              onReorder={onReorder}
               onToggleComplete={onToggleComplete}
             />
             <AssignmentPagination
               currentPage={safeCurrentPage}
               pageCount={pageCount}
-              pageSize={pageSize}
+              pageSize={effectivePageSize}
               totalItems={queriedAssignments.length}
               onPageChange={setCurrentPage}
               onPageSizeChange={handlePageSizeChange}
