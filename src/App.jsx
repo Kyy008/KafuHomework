@@ -16,6 +16,15 @@ const getViewTitle = (activeView) => {
   return '查看作业'
 }
 
+const appShellClass =
+  'app-shell min-h-screen text-[var(--foreground)]'
+const appBodyClass = 'app-body flex min-h-[calc(100vh-var(--topbar-height))]'
+const workspaceClass =
+  'workspace min-w-0 flex-1 overflow-y-auto bg-transparent px-8 py-6 max-md:px-4 max-md:pb-[calc(var(--mobile-bottom-nav-height)+24px)]'
+const authLoadingCardClass =
+  'auth-card auth-loading-card w-[min(100%,420px)] border border-[var(--border)] bg-[rgba(36,36,36,0.72)] p-7 text-center backdrop-blur-lg'
+const emptyViewClass = 'empty-view min-h-full'
+
 function App() {
   const [activeView, setActiveView] = useState('view')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -41,8 +50,8 @@ function App() {
 
   if (auth.isAuthLoading) {
     return (
-      <main className="auth-page">
-        <section className="auth-card auth-loading-card">
+      <main className="auth-page grid min-h-screen place-items-center p-6 text-[var(--foreground)]">
+        <section className={authLoadingCardClass}>
           <p>正在校验登录状态...</p>
         </section>
       </main>
@@ -62,13 +71,15 @@ function App() {
 
   return (
     <div
-      className={`app-shell ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+      className={`${appShellClass} ${
+        isSidebarCollapsed ? 'sidebar-collapsed' : ''
+      }`}
       data-active-view={activeView}
       data-assignment-count={assignmentStore.assignments.length}
     >
       <Topbar onLogout={auth.logout} username={auth.user.username} />
 
-      <div className="app-body">
+      <div className={appBodyClass}>
         <Sidebar
           activeView={activeView}
           isCollapsed={isSidebarCollapsed}
@@ -82,7 +93,7 @@ function App() {
           }
         />
 
-        <main className="workspace" aria-label={getViewTitle(activeView)}>
+        <main className={workspaceClass} aria-label={getViewTitle(activeView)}>
           {activeView === 'view' ? (
             <ViewAssignments
               assignments={assignmentStore.assignments}
@@ -105,7 +116,7 @@ function App() {
               }}
             />
           ) : (
-            <section className="empty-view" />
+            <section className={emptyViewClass} />
           )}
         </main>
       </div>

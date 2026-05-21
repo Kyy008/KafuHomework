@@ -11,6 +11,14 @@ const DRAG_AUTO_SCROLL_DELAY_MS = 500
 const DRAG_AUTO_SCROLL_EDGE_SIZE = 80
 const DRAG_AUTO_SCROLL_MIN_SPEED = 1
 const DRAG_AUTO_SCROLL_MAX_SPEED = 6
+const cardClass =
+  'assignment-card flex w-full items-stretch gap-3 rounded-lg border border-[var(--border)] bg-[var(--glass-panel)] p-4 backdrop-blur-lg transition-[border-color,box-shadow,transform]'
+const actionButtonBaseClass =
+  'assignment-action-button rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-3 py-2 text-sm font-extrabold text-[var(--foreground)] transition hover:bg-[var(--muted)] active:scale-[0.98]'
+const confirmButtonClass =
+  'rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-4 py-2 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--muted)]'
+const infoPillClass =
+  'assignment-info-pill min-w-0 rounded-md bg-[var(--glass-panel-strong)] px-3 py-2'
 
 function CheckIcon() {
   return (
@@ -31,9 +39,13 @@ function CheckIcon() {
 
 function InfoPill({ label, value }) {
   return (
-    <div className="assignment-info-pill">
-      <span>{label}</span>
-      <strong>{value || '—'}</strong>
+    <div className={infoPillClass}>
+      <span className="block text-xs font-bold text-[var(--muted-foreground)]">
+        {label}
+      </span>
+      <strong className="mt-1 block break-words text-sm font-extrabold text-[var(--foreground)]">
+        {value || '—'}
+      </strong>
     </div>
   )
 }
@@ -46,8 +58,14 @@ function AssignmentActionButton({
 }) {
   return (
     <button
-      className={`assignment-action-button ${danger ? 'danger' : ''} ${
-        variant ? variant : ''
+      className={`${actionButtonBaseClass} ${
+        danger
+          ? 'danger border-[rgba(255,122,138,0.65)] bg-[#2d191b] text-[#ffc3ca] hover:bg-[#3a1f22]'
+          : ''
+      } ${
+        variant === 'edit'
+          ? 'edit border-[rgba(87,191,218,0.65)] bg-[#17313a] text-[#bdefff] hover:bg-[#1d3d48]'
+          : ''
       }`}
       onClick={onClick}
       type="button"
@@ -59,15 +77,26 @@ function AssignmentActionButton({
 
 function ConfirmDialog({ confirmTone = 'default', message, onCancel, onConfirm }) {
   return createPortal(
-    <div className="confirm-dialog-backdrop" role="presentation">
-      <div aria-modal="true" className="confirm-dialog" role="dialog">
-        <p>{message}</p>
-        <div className="confirm-dialog-actions">
-          <button type="button" onClick={onCancel}>
+    <div
+      className="confirm-dialog-backdrop fixed inset-0 z-50 grid place-items-center bg-[rgba(0,0,0,0.58)] p-4 backdrop-blur-sm"
+      role="presentation"
+    >
+      <div
+        aria-modal="true"
+        className="confirm-dialog w-[min(360px,calc(100vw-32px))] rounded-lg border border-[var(--border)] bg-[var(--glass-panel)] p-6 shadow-[0_22px_60px_rgba(0,0,0,0.42)] backdrop-blur-lg"
+        role="dialog"
+      >
+        <p className="m-0 text-base font-bold text-[var(--foreground)]">{message}</p>
+        <div className="confirm-dialog-actions mt-5 flex justify-end gap-3">
+          <button className={confirmButtonClass} type="button" onClick={onCancel}>
             取消
           </button>
           <button
-            className={confirmTone === 'danger' ? 'danger' : ''}
+            className={`${confirmButtonClass} ${
+              confirmTone === 'danger'
+                ? 'danger border-[rgba(255,122,138,0.75)] bg-[#2d191b] text-[#ffc3ca] hover:bg-[#3a1f22]'
+                : ''
+            }`}
             type="button"
             onClick={onConfirm}
           >
@@ -123,7 +152,7 @@ function AssignmentCard({
   return (
     <>
       <article
-        className={`assignment-card ${highlighted ? 'highlighted' : ''} ${
+        className={`${cardClass} ${highlighted ? 'highlighted' : ''} ${
           isDeleting ? 'deleting' : ''
         } ${isDragging ? 'dragging' : ''} ${
           canReorder ? 'reorderable' : ''
@@ -146,17 +175,19 @@ function AssignmentCard({
         )}
 
         <div className="assignment-card-content">
-          <div className="assignment-card-main">
-            <div className="assignment-card-heading">
-              <div className="assignment-title-row">
-                <h2>{assignment.title}</h2>
+          <div className="assignment-card-main flex items-start justify-between gap-4 max-md:flex-col">
+            <div className="assignment-card-heading min-w-0">
+              <div className="assignment-title-row flex min-w-0 flex-wrap items-center gap-2">
+                <h2 className="m-0 min-w-0 break-words text-xl font-extrabold text-[var(--foreground)]">
+                  {assignment.title}
+                </h2>
                 <span className={`assignment-status ${status.tone}`}>
                   {status.label}
                 </span>
               </div>
             </div>
 
-            <div className="assignment-card-actions">
+            <div className="assignment-card-actions flex shrink-0 flex-wrap justify-end gap-2 max-md:justify-start">
               <AssignmentActionButton
                 variant="edit"
                 onClick={() => onEdit(assignment)}
@@ -174,7 +205,7 @@ function AssignmentCard({
               {assignment.completed ? (
                 <span className="complete-badge-slot">
                   <span
-                    className="complete-badge"
+                    className="complete-badge grid h-9 w-9 place-items-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)]"
                     title="已完成"
                     aria-label="已完成"
                   >
@@ -183,7 +214,7 @@ function AssignmentCard({
                 </span>
               ) : (
                 <button
-                  className="complete-button"
+                  className="complete-button rounded-md border border-transparent bg-[#4bae50] px-3 py-2 text-sm font-extrabold text-white transition hover:bg-[#449b48] active:scale-[0.98]"
                   onClick={() => setPendingAction('complete')}
                   type="button"
                 >
@@ -193,7 +224,7 @@ function AssignmentCard({
             </div>
           </div>
 
-          <div className="assignment-info-grid">
+          <div className="assignment-info-grid mt-4 grid grid-cols-3 gap-3 max-md:grid-cols-1">
             <InfoPill label="作业详情" value={assignment.detail} />
             <InfoPill label="课程" value={assignment.course} />
             <InfoPill
@@ -204,7 +235,7 @@ function AssignmentCard({
 
           {!assignment.completed && (
             <div
-              className="assignment-progress-track"
+              className="assignment-progress-track mt-4 h-2 overflow-hidden rounded-full bg-[var(--panel-strong)]"
               aria-label={`作业进度 ${Math.round(progress)}%`}
               title={`作业进度 ${Math.round(progress)}%`}
             >

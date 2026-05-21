@@ -33,6 +33,18 @@ const SORT_ORDER_OPTIONS = [
   { label: '升序', value: 'asc' },
   { label: '降序', value: 'desc' },
 ]
+const panelClass =
+  'rounded-lg border border-[var(--border)] bg-[var(--glass-panel)] p-4 backdrop-blur-lg'
+const fieldLabelClass =
+  'grid gap-2 text-sm font-bold text-[var(--foreground)]'
+const fieldControlClass =
+  'min-h-10 w-full rounded-md border border-[var(--border)] bg-[rgba(15,18,13,0.58)] px-2.5 py-2 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(207,217,244,0.14)]'
+const submitButtonClass =
+  'form-submit-button h-10 rounded-md border border-transparent bg-[var(--primary)] px-4 text-sm font-extrabold text-[var(--primary-foreground)] transition hover:bg-[#dde6ff] active:scale-[0.98]'
+const resetButtonClass =
+  'form-reset-button h-10 rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-4 text-sm font-extrabold text-[var(--foreground)] transition hover:bg-[var(--muted)] active:scale-[0.98]'
+const errorTextClass =
+  'mt-3 rounded-md bg-[rgba(255,122,138,0.1)] px-3 py-2 text-sm font-bold text-[#ffc3ca]'
 
 const normalizeText = (value) => value.trim().toLowerCase()
 
@@ -140,16 +152,20 @@ function EditAssignmentDialog({
 
 function StatBlock({ label, tone, value }) {
   return (
-    <div className={`stat-card ${tone}`}>
-      <p>{label}</p>
-      <strong>{value}</strong>
+    <div
+      className={`stat-card ${tone} min-h-[76px] rounded-lg border p-4 text-white`}
+    >
+      <p className="m-0 text-sm font-bold">{label}</p>
+      <strong className="mt-1.5 block text-2xl font-extrabold leading-none">
+        {value}
+      </strong>
     </div>
   )
 }
 
 export function StatsSection({ stats }) {
   return (
-    <section className="stats-section">
+    <section className="stats-section grid grid-cols-4 gap-4 max-md:grid-cols-2">
       <StatBlock label="进行中" tone="active" value={stats.active} />
       <StatBlock label="临近截止" tone="approaching" value={stats.approaching} />
       <StatBlock label="紧急作业" tone="urgent" value={stats.urgent} />
@@ -175,11 +191,15 @@ function AssignmentQueryPanel({
   }
 
   return (
-    <section className="assignment-query-panel">
-      <form className="assignment-query-form" onSubmit={onSubmit}>
-        <label>
+    <section className={`assignment-query-panel ${panelClass}`}>
+      <form
+        className="assignment-query-form grid grid-cols-[repeat(5,minmax(0,1fr))_auto] items-end gap-3 max-lg:grid-cols-2 max-md:grid-cols-1"
+        onSubmit={onSubmit}
+      >
+        <label className={fieldLabelClass}>
           <span>作业名称</span>
           <input
+            className={fieldControlClass}
             name="title"
             onChange={handleChange}
             type="text"
@@ -187,9 +207,10 @@ function AssignmentQueryPanel({
           />
         </label>
 
-        <label>
+        <label className={fieldLabelClass}>
           <span>作业描述</span>
           <input
+            className={fieldControlClass}
             name="detail"
             onChange={handleChange}
             type="text"
@@ -197,9 +218,10 @@ function AssignmentQueryPanel({
           />
         </label>
 
-        <label>
+        <label className={fieldLabelClass}>
           <span>课程名</span>
           <input
+            className={fieldControlClass}
             name="course"
             onChange={handleChange}
             type="text"
@@ -207,9 +229,10 @@ function AssignmentQueryPanel({
           />
         </label>
 
-        <label>
+        <label className={fieldLabelClass}>
           <span>截止起始日期</span>
           <input
+            className={fieldControlClass}
             name="startDate"
             onChange={handleChange}
             type="date"
@@ -217,9 +240,10 @@ function AssignmentQueryPanel({
           />
         </label>
 
-        <label>
+        <label className={fieldLabelClass}>
           <span>截止结束日期</span>
           <input
+            className={fieldControlClass}
             name="endDate"
             onChange={handleChange}
             type="date"
@@ -227,22 +251,23 @@ function AssignmentQueryPanel({
           />
         </label>
 
-        <div className="assignment-query-actions">
-          <button className="form-submit-button" type="submit">
+        <div className="assignment-query-actions flex gap-2 whitespace-nowrap max-lg:col-span-2 max-md:col-span-1">
+          <button className={submitButtonClass} type="submit">
             查询
           </button>
-          <button className="form-reset-button" type="button" onClick={onReset}>
+          <button className={resetButtonClass} type="button" onClick={onReset}>
             重置
           </button>
         </div>
       </form>
 
-      {error && <p className="assignment-query-error">{error}</p>}
+      {error && <p className={`assignment-query-error ${errorTextClass}`}>{error}</p>}
 
-      <div className="assignment-sort-controls">
-        <label>
+      <div className="assignment-sort-controls mt-3 flex flex-wrap gap-3">
+        <label className={`${fieldLabelClass} min-w-36`}>
           <span>排序字段</span>
           <select
+            className={fieldControlClass}
             value={sortField}
             onChange={(event) => onSortFieldChange(event.target.value)}
           >
@@ -255,9 +280,10 @@ function AssignmentQueryPanel({
         </label>
 
         {sortField !== 'custom' && (
-          <label>
+          <label className={`${fieldLabelClass} min-w-36`}>
             <span>排序方式</span>
             <select
+              className={fieldControlClass}
               value={sortOrder}
               onChange={(event) => onSortOrderChange(event.target.value)}
             >
@@ -287,10 +313,14 @@ function AssignmentPagination({
   }
 
   return (
-    <section className="assignment-pagination" aria-label="作业分页">
-      <div className="pagination-size-control">
+    <section
+      className={`assignment-pagination ${panelClass} flex flex-wrap items-center justify-between gap-3`}
+      aria-label="作业分页"
+    >
+      <div className="pagination-size-control flex items-center gap-2 text-sm font-bold text-[var(--muted-foreground)]">
         <span>每页</span>
         <select
+          className={fieldControlClass}
           aria-label="选择每页作业数量"
           value={pageSize}
           onChange={(event) => onPageSizeChange(event.target.value)}
@@ -303,8 +333,9 @@ function AssignmentPagination({
         </select>
       </div>
 
-      <div className="pagination-page-list">
+      <div className="pagination-page-list flex flex-wrap gap-2">
         <button
+          className={resetButtonClass}
           disabled={currentPage <= 1}
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
@@ -317,7 +348,11 @@ function AssignmentPagination({
 
           return (
             <button
-              className={page === currentPage ? 'active' : ''}
+              className={`${resetButtonClass} ${
+                page === currentPage
+                  ? 'active border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
+                  : ''
+              }`}
               key={page}
               type="button"
               onClick={() => onPageChange(page)}
@@ -328,6 +363,7 @@ function AssignmentPagination({
         })}
 
         <button
+          className={resetButtonClass}
           disabled={currentPage >= pageCount}
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
@@ -336,7 +372,7 @@ function AssignmentPagination({
         </button>
       </div>
 
-      <span className="pagination-summary">
+      <span className="pagination-summary text-sm font-bold text-[var(--muted-foreground)]">
         第 {currentPage} / {pageCount} 页，共 {totalItems} 项
       </span>
     </section>
@@ -478,9 +514,12 @@ export function ViewAssignments({
   }
 
   return (
-    <div className="view-dashboard">
+    <div className="view-dashboard mx-auto flex h-[calc(100vh-var(--topbar-height)-48px)] w-[min(100%,1120px)] flex-col gap-5 overflow-hidden">
       <StatsSection stats={stats} />
-      <div className="view-scroll-area" ref={scrollAreaRef}>
+      <div
+        className="view-scroll-area flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1"
+        ref={scrollAreaRef}
+      >
         <AssignmentQueryPanel
           draftQuery={draftQuery}
           error={queryError}
@@ -525,9 +564,13 @@ export function ViewAssignments({
             />
           </>
         ) : (
-          <section className="assignment-empty-result">
-            <h2>没有符合条件的作业</h2>
-            <p>调整查询条件后再试一次。</p>
+          <section className={`assignment-empty-result ${panelClass}`}>
+            <h2 className="m-0 text-xl font-extrabold text-[var(--foreground)]">
+              没有符合条件的作业
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-[var(--muted-foreground)]">
+              调整查询条件后再试一次。
+            </p>
           </section>
         )}
       </div>
@@ -901,11 +944,12 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
   }
 
   return (
-    <section className="assignment-form-panel">
-      <form className="assignment-form" onSubmit={handleSubmit}>
-        <label>
+    <section className={`assignment-form-panel ${panelClass} mx-auto w-[min(100%,760px)] p-6`}>
+      <form className="assignment-form grid gap-4" onSubmit={handleSubmit}>
+        <label className={fieldLabelClass}>
           <span>作业名称</span>
           <input
+            className={fieldControlClass}
             name="title"
             onChange={handleChange}
             type="text"
@@ -913,9 +957,10 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
           />
         </label>
 
-        <label>
+        <label className={fieldLabelClass}>
           <span>作业详情</span>
           <textarea
+            className={`${fieldControlClass} min-h-32 resize-y`}
             name="detail"
             onChange={handleChange}
             rows="5"
@@ -923,10 +968,11 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
           />
         </label>
 
-        <div className="assignment-form-grid">
-          <label>
+        <div className="assignment-form-grid grid grid-cols-3 gap-4 max-md:grid-cols-1">
+          <label className={fieldLabelClass}>
             <span>对应课程</span>
             <input
+              className={fieldControlClass}
               name="course"
               onChange={handleChange}
               type="text"
@@ -934,7 +980,7 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
             />
           </label>
 
-          <label>
+          <label className={fieldLabelClass}>
             <span>截止日期</span>
             <CalendarDatePicker
               minDeadline={minDeadline}
@@ -943,7 +989,7 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
             />
           </label>
 
-          <label>
+          <label className={fieldLabelClass}>
             <span>截止时间</span>
             <TimePicker
               minDeadline={minDeadline}
@@ -953,13 +999,13 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
           </label>
         </div>
 
-        {error && <p className="form-error">{error}</p>}
+        {error && <p className={`form-error ${errorTextClass}`}>{error}</p>}
 
-        <div className="assignment-form-actions">
-          <button className="form-submit-button" type="submit">
+        <div className="assignment-form-actions flex flex-wrap gap-3">
+          <button className={submitButtonClass} type="submit">
             {isEditing ? '保存修改' : '添加作业'}
           </button>
-          <button className="form-reset-button" type="button" onClick={handleReset}>
+          <button className={resetButtonClass} type="button" onClick={handleReset}>
             {isEditing ? '还原' : '重置'}
           </button>
         </div>

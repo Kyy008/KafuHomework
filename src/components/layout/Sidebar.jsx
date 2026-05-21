@@ -7,6 +7,32 @@ const MOBILE_NAV_ACTIONS = [
   ...EDIT_ACTIONS,
 ]
 
+const sidebarClass =
+  'sidebar hidden w-[var(--sidebar-expanded-width)] shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--glass-sidebar)] px-4 py-5 backdrop-blur-lg transition-[width,padding] duration-300 md:block'
+const collapseRowClass =
+  'sidebar-collapse-row mb-4 flex justify-end'
+const collapseButtonClass =
+  'collapse-button grid h-10 w-10 place-items-center rounded-md border border-[var(--border)] bg-transparent text-[var(--muted-foreground)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]'
+const sideNavClass = 'side-nav grid gap-2'
+const navGroupClass = 'nav-group grid gap-2'
+const navChildrenClass = 'nav-children overflow-hidden transition-[max-height] duration-300'
+const navChildrenInnerClass = 'nav-children-inner pl-3'
+const navChildrenStackClass = 'nav-children-stack grid gap-2'
+const treeButtonBaseClass =
+  'tree-button flex min-h-11 w-full items-center gap-3 rounded-md border border-transparent bg-transparent px-3 text-left text-sm font-bold text-[var(--muted-foreground)] transition hover:bg-[rgba(32,36,29,0.58)] hover:text-[var(--foreground)]'
+const treeButtonActiveClass =
+  'active border-[var(--primary)] bg-[rgba(38,50,69,0.58)] text-[var(--primary)]'
+const treeButtonCollapsedClass = 'collapsed justify-center px-2'
+const treeLabelClass = 'tree-label min-w-0 truncate'
+const editGroupButtonClass =
+  'edit-group-button flex min-h-11 w-full items-center gap-3 rounded-md border border-transparent bg-transparent px-3 text-left text-sm font-bold text-[var(--muted-foreground)] transition hover:bg-[rgba(32,36,29,0.58)] hover:text-[var(--foreground)]'
+const mobileBottomNavClass =
+  'mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid min-h-[calc(var(--mobile-bottom-nav-height)+env(safe-area-inset-bottom))] grid-cols-2 border-t border-[var(--border)] bg-[var(--glass-panel)] px-2.5 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] backdrop-blur-lg md:hidden'
+const mobileButtonClass =
+  'mobile-nav-button grid place-items-center gap-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-xs font-extrabold text-[var(--muted-foreground)] transition active:scale-[0.98]'
+const mobileButtonActiveClass =
+  'active border-[var(--primary)] bg-[rgba(38,50,69,0.58)] text-[var(--primary)]'
+
 function ChevronIcon({ className = '' }) {
   return (
     <svg
@@ -95,15 +121,16 @@ function TreeButton({ active, collapsed, icon, label, onClick }) {
   return (
     <button
       aria-label={label}
-      className={`tree-button ${active ? 'active' : ''} ${
-        collapsed ? 'collapsed' : ''
+      className={`${treeButtonBaseClass} ${
+        active ? treeButtonActiveClass : ''
+      } ${collapsed ? treeButtonCollapsedClass : ''
       }`}
       onClick={onClick}
       title={label}
       type="button"
     >
       <SidebarIcon name={icon} />
-      <span className="tree-label">{label}</span>
+      <span className={treeLabelClass}>{label}</span>
     </button>
   )
 }
@@ -117,10 +144,10 @@ export function Sidebar({
   onToggleEditMenu,
 }) {
   return (
-    <aside className="sidebar" aria-label="主导航">
-      <div className={`sidebar-collapse-row ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside className={sidebarClass} aria-label="主导航">
+      <div className={`${collapseRowClass} ${isCollapsed ? 'collapsed' : ''}`}>
         <button
-          className="collapse-button"
+          className={collapseButtonClass}
           type="button"
           aria-label={isCollapsed ? '展开侧边导航栏' : '收起侧边导航栏'}
           title={isCollapsed ? '展开侧边导航栏' : '收起侧边导航栏'}
@@ -133,7 +160,7 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="side-nav">
+      <nav className={sideNavClass}>
         <TreeButton
           active={activeView === 'view'}
           collapsed={isCollapsed}
@@ -142,29 +169,29 @@ export function Sidebar({
           onClick={() => onChangeView('view')}
         />
 
-        <div className="nav-group">
+        <div className={navGroupClass}>
           <button
             aria-expanded={isEditMenuExpanded}
             aria-label="作业编辑"
-            className={`edit-group-button ${
-              activeView === 'add' ? 'active' : ''
-            } ${isCollapsed ? 'collapsed' : ''}`}
+            className={`${editGroupButtonClass} ${
+              activeView === 'add' ? treeButtonActiveClass : ''
+            } ${isCollapsed ? treeButtonCollapsedClass : ''}`}
             onClick={onToggleEditMenu}
             title="作业编辑"
             type="button"
           >
             <SidebarIcon name="group" />
-            <span className="tree-label">作业编辑</span>
+            <span className={treeLabelClass}>作业编辑</span>
             <ChevronIcon className={isEditMenuExpanded ? 'rotated' : ''} />
           </button>
 
           <div
-            className={`nav-children ${
+            className={`${navChildrenClass} ${
               isEditMenuExpanded ? 'expanded' : ''
             } ${isCollapsed ? 'collapsed' : ''}`}
           >
-            <div className="nav-children-inner">
-              <div className="nav-children-stack">
+            <div className={navChildrenInnerClass}>
+              <div className={navChildrenStackClass}>
                 {EDIT_ACTIONS.map((action) => (
                   <TreeButton
                     active={activeView === action.id}
@@ -186,13 +213,13 @@ export function Sidebar({
 
 export function MobileBottomNav({ activeView, onChangeView }) {
   return (
-    <nav className="mobile-bottom-nav" aria-label="移动端主导航">
+    <nav className={mobileBottomNavClass} aria-label="移动端主导航">
       {MOBILE_NAV_ACTIONS.map((action) => (
         <button
           aria-label={action.label}
           aria-current={activeView === action.id ? 'page' : undefined}
-          className={`mobile-nav-button ${
-            activeView === action.id ? 'active' : ''
+          className={`${mobileButtonClass} ${
+            activeView === action.id ? mobileButtonActiveClass : ''
           }`}
           key={action.id}
           onClick={() => onChangeView(action.id)}
