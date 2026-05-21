@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 
+const staticDemoUser = {
+  id: 'github-pages-demo',
+  username: 'Demo',
+}
+
+const isGitHubPagesRuntime = () =>
+  typeof window !== 'undefined' &&
+  window.location.hostname.toLowerCase().endsWith('github.io')
+
+const createStaticUser = (username) => ({
+  id: 'github-pages-demo',
+  username: username.trim() || staticDemoUser.username,
+})
+
 const parseApiResponse = async (response) => {
   const payload = await response.json().catch(() => ({}))
 
@@ -22,9 +36,10 @@ const postAuthRequest = async (url, body = null) => {
 }
 
 export function useAuth() {
+  const isStaticDemo = isGitHubPagesRuntime()
   const [authError, setAuthError] = useState('')
-  const [isAuthLoading, setIsAuthLoading] = useState(true)
-  const [user, setUser] = useState(null)
+  const [isAuthLoading, setIsAuthLoading] = useState(!isStaticDemo)
+  const [user, setUser] = useState(isStaticDemo ? staticDemoUser : null)
 
   const applySessionResponse = useCallback((payload) => {
     setUser(payload.authenticated ? payload.user : null)
@@ -33,6 +48,12 @@ export function useAuth() {
   const checkSession = useCallback(async () => {
     setIsAuthLoading(true)
     setAuthError('')
+
+    if (isStaticDemo) {
+      setUser(staticDemoUser)
+      setIsAuthLoading(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/auth/session', {
@@ -46,10 +67,12 @@ export function useAuth() {
     } finally {
       setIsAuthLoading(false)
     }
-  }, [applySessionResponse])
+  }, [applySessionResponse, isStaticDemo])
 
   useEffect(() => {
     let isMounted = true
+
+    if (isStaticDemo) return undefined
 
     const loadSession = async () => {
       try {
@@ -80,10 +103,17 @@ export function useAuth() {
     return () => {
       isMounted = false
     }
-  }, [applySessionResponse])
+  }, [applySessionResponse, isStaticDemo])
 
   const login = async ({ password, username }) => {
     setAuthError('')
+
+    if (isStaticDemo) {
+      const staticUser = createStaticUser(username)
+      setUser(staticUser)
+      return staticUser
+    }
+
     const payload = await postAuthRequest('/api/auth/login', {
       password,
       username,
@@ -94,6 +124,13 @@ export function useAuth() {
 
   const register = async ({ password, username }) => {
     setAuthError('')
+
+    if (isStaticDemo) {
+      const staticUser = createStaticUser(username)
+      setUser(staticUser)
+      return staticUser
+    }
+
     const payload = await postAuthRequest('/api/auth/register', {
       password,
       username,
@@ -104,6 +141,12 @@ export function useAuth() {
 
   const logout = async () => {
     setAuthError('')
+
+    if (isStaticDemo) {
+      setUser(null)
+      return
+    }
+
     await postAuthRequest('/api/auth/logout')
     setUser(null)
   }
