@@ -38,6 +38,9 @@ const SORT_ORDER_OPTIONS = [
   { label: '升序', value: 'asc' },
   { label: '降序', value: 'desc' },
 ]
+const DRAG_AUTO_SCROLL_DELAY_MS = 500
+const DRAG_AUTO_SCROLL_EDGE_SIZE = 80
+const DRAG_AUTO_SCROLL_MAX_SPEED = 18
 
 const normalizeText = (value) => value.trim().toLowerCase()
 
@@ -379,6 +382,10 @@ export function AssignmentList({
   const listRef = useRef(null)
   const cardPositionsRef = useRef(new Map())
   const cardAnimationFrameRef = useRef(null)
+  const autoScrollAnimationFrameRef = useRef(null)
+  const autoScrollDelayTimerRef = useRef(null)
+  const autoScrollDirectionRef = useRef(0)
+  const lastPointerYRef = useRef(null)
   const orderedIdsRef = useRef([])
   const [draggingAssignmentId, setDraggingAssignmentId] = useState(null)
   const [dragOrderIds, setDragOrderIds] = useState(null)
@@ -483,9 +490,23 @@ export function AssignmentList({
       return undefined
     }
 
-    const handlePointerMove = (event) => {
-      event.preventDefault()
+    const clearAutoScroll = () => {
+      if (autoScrollDelayTimerRef.current) {
+        window.clearTimeout(autoScrollDelayTimerRef.current)
+        autoScrollDelayTimerRef.current = null
+      }
 
+      if (autoScrollAnimationFrameRef.current) {
+        window.cancelAnimationFrame(autoScrollAnimationFrameRef.current)
+        autoScrollAnimationFrameRef.current = null
+      }
+
+      autoScrollDirectionRef.current = 0
+    }
+
+    const getScrollArea = () => listRef.current?.closest('.view-scroll-area')
+
+    const updateDragOrder = (clientY) => {
       if (!listRef.current) {
         return
       }
@@ -517,7 +538,7 @@ export function AssignmentList({
         })
 
       const nextIndexCandidate = staticCards.findIndex(
-        (card) => event.clientY < card.centerY,
+        (card) => clientY < card.centerY,
       )
       const toIndex =
         nextIndexCandidate === -1 ? staticCards.length : nextIndexCandidate
@@ -533,7 +554,109 @@ export function AssignmentList({
       setDragOrderIds(nextIds)
     }
 
+    const getAutoScrollDirection = (clientY) => {
+      const scrollArea = getScrollArea()
+
+      if (!scrollArea) {
+        return 0
+      }
+
+      const rect = scrollArea.getBoundingClientRect()
+      const canScrollUp = scrollArea.scrollTop > 0
+      const canScrollDown =
+        scrollArea.scrollTop + scrollArea.clientHeight < scrollArea.scrollHeight
+
+      if (clientY < rect.top + DRAG_AUTO_SCROLL_EDGE_SIZE && canScrollUp) {
+        return -1
+      }
+
+      if (
+        clientY > rect.bottom - DRAG_AUTO_SCROLL_EDGE_SIZE &&
+        canScrollDown
+      ) {
+        return 1
+      }
+
+      return 0
+    }
+
+    const getAutoScrollSpeed = (clientY, direction) => {
+      const scrollArea = getScrollArea()
+
+      if (!scrollArea) {
+        return 0
+      }
+
+      const rect = scrollArea.getBoundingClientRect()
+      const distanceIntoEdge =
+        direction < 0
+          ? rect.top + DRAG_AUTO_SCROLL_EDGE_SIZE - clientY
+          : clientY - (rect.bottom - DRAG_AUTO_SCROLL_EDGE_SIZE)
+      const edgeRatio = Math.min(
+        1,
+        Math.max(0, distanceIntoEdge / DRAG_AUTO_SCROLL_EDGE_SIZE),
+      )
+
+      return 4 + edgeRatio * DRAG_AUTO_SCROLL_MAX_SPEED
+    }
+
+    const runAutoScroll = () => {
+      const scrollArea = getScrollArea()
+      const pointerY = lastPointerYRef.current
+      const direction = autoScrollDirectionRef.current
+
+      if (!scrollArea || pointerY === null || direction === 0) {
+        clearAutoScroll()
+        return
+      }
+
+      const nextDirection = getAutoScrollDirection(pointerY)
+
+      if (nextDirection !== direction) {
+        clearAutoScroll()
+        return
+      }
+
+      scrollArea.scrollTop += getAutoScrollSpeed(pointerY, direction) * direction
+      updateDragOrder(pointerY)
+      autoScrollAnimationFrameRef.current =
+        window.requestAnimationFrame(runAutoScroll)
+    }
+
+    const scheduleAutoScroll = (clientY) => {
+      const direction = getAutoScrollDirection(clientY)
+
+      if (direction === 0) {
+        clearAutoScroll()
+        return
+      }
+
+      if (
+        autoScrollDirectionRef.current === direction &&
+        (autoScrollDelayTimerRef.current ||
+          autoScrollAnimationFrameRef.current)
+      ) {
+        return
+      }
+
+      clearAutoScroll()
+      autoScrollDirectionRef.current = direction
+      autoScrollDelayTimerRef.current = window.setTimeout(() => {
+        autoScrollDelayTimerRef.current = null
+        autoScrollAnimationFrameRef.current =
+          window.requestAnimationFrame(runAutoScroll)
+      }, DRAG_AUTO_SCROLL_DELAY_MS)
+    }
+
+    const handlePointerMove = (event) => {
+      event.preventDefault()
+      lastPointerYRef.current = event.clientY
+      updateDragOrder(event.clientY)
+      scheduleAutoScroll(event.clientY)
+    }
+
     const handlePointerEnd = () => {
+      clearAutoScroll()
       onReorder?.(orderedIdsRef.current)
       setDraggingAssignmentId(null)
       setDragOrderIds(null)
@@ -546,6 +669,7 @@ export function AssignmentList({
     window.addEventListener('pointercancel', handlePointerEnd)
 
     return () => {
+      clearAutoScroll()
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerEnd)
       window.removeEventListener('pointercancel', handlePointerEnd)
@@ -572,6 +696,7 @@ export function AssignmentList({
     event.preventDefault()
     const nextOrderedIds = assignments.map((assignment) => String(assignment.id))
     orderedIdsRef.current = nextOrderedIds
+    lastPointerYRef.current = event.clientY
     setDragOrderIds(nextOrderedIds)
     setDraggingAssignmentId(String(assignmentId))
   }
