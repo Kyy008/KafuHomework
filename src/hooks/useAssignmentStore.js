@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'ddl-reminder-assignments'
 const DEMO_STORAGE_VERSION_KEY = 'ddl-reminder-demo-version'
-const DEMO_ASSIGNMENT_VERSION = '2026-06-homework-demo'
+const DEMO_ASSIGNMENT_VERSION = '2026-06-full-month-homework-demo'
 
 const isGitHubPagesRuntime = () =>
   typeof window !== 'undefined' &&
@@ -115,6 +115,66 @@ const createGitHubPagesDemoAssignments = () => {
       detail: '整理所有课程剩余任务，标记高优先级事项。',
       course: '综合事务',
       deadline: createDemoDate(20, 20, 0),
+    },
+    {
+      title: '机器学习实验报告',
+      detail: '整理模型训练过程、参数设置、准确率曲线和实验结论。',
+      course: '机器学习',
+      deadline: createDemoDate(21, 21, 0),
+    },
+    {
+      title: '移动应用原型评审',
+      detail: '完善首页、任务页和个人中心原型，准备评审说明。',
+      course: '移动应用开发',
+      deadline: createDemoDate(22, 20, 30),
+    },
+    {
+      title: '信息安全案例分析',
+      detail: '选择一个真实安全事件，分析攻击路径、防护措施和启示。',
+      course: '信息安全',
+      deadline: createDemoDate(23, 19, 30),
+    },
+    {
+      title: '算法设计期末练习',
+      detail: '完成动态规划、贪心和图算法专题练习并整理错题。',
+      course: '算法设计',
+      deadline: createDemoDate(24, 22, 0),
+    },
+    {
+      title: '云计算部署实验',
+      detail: '记录服务部署流程、环境变量配置和访问测试结果。',
+      course: '云计算',
+      deadline: createDemoDate(25, 21, 30),
+    },
+    {
+      title: '人机交互可用性测试',
+      detail: '设计测试任务，记录用户反馈并提出界面优化建议。',
+      course: '人机交互',
+      deadline: createDemoDate(26, 20, 0),
+    },
+    {
+      title: '数据可视化图表优化',
+      detail: '调整图表配色、标签层级和关键指标说明。',
+      course: '数据可视化',
+      deadline: createDemoDate(27, 19, 0),
+    },
+    {
+      title: '嵌入式系统实验总结',
+      detail: '补充实验接线图、程序流程和调试问题记录。',
+      course: '嵌入式系统',
+      deadline: createDemoDate(28, 21, 0),
+    },
+    {
+      title: '项目路演讲稿排练',
+      detail: '压缩路演讲稿，准备产品亮点、商业价值和答辩问题。',
+      course: '项目路演',
+      deadline: createDemoDate(29, 20, 30),
+    },
+    {
+      title: '六月学习总结归档',
+      detail: '整理本月作业、实验、答辩材料和复习计划。',
+      course: '学习总结',
+      deadline: createDemoDate(30, 22, 0),
     },
   ]
 
