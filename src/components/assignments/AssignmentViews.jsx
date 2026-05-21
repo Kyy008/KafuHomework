@@ -116,15 +116,61 @@ function InfoPill({ label, value }) {
   )
 }
 
-function AssignmentActionButton({ children, danger = false, onClick }) {
+function AssignmentActionButton({
+  children,
+  danger = false,
+  onClick,
+  variant = '',
+}) {
   return (
     <button
-      className={`assignment-action-button ${danger ? 'danger' : ''}`}
+      className={`assignment-action-button ${danger ? 'danger' : ''} ${
+        variant ? variant : ''
+      }`}
       onClick={onClick}
       type="button"
     >
       {children}
     </button>
+  )
+}
+
+function EditAssignmentDialog({
+  assignment,
+  minDeadline,
+  onClose,
+  onSave,
+}) {
+  const handleSubmit = (formData) => {
+    onSave({
+      ...assignment,
+      ...formData,
+    })
+    onClose()
+  }
+
+  return createPortal(
+    <div className="confirm-dialog-backdrop" role="presentation">
+      <div
+        aria-modal="true"
+        className="assignment-edit-dialog"
+        role="dialog"
+      >
+        <div className="assignment-edit-dialog-heading">
+          <h2>编辑作业</h2>
+          <button type="button" onClick={onClose} aria-label="关闭编辑弹窗">
+            ×
+          </button>
+        </div>
+        <AssignmentForm
+          assignment={assignment}
+          key={assignment.id}
+          minDeadline={minDeadline}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -156,6 +202,7 @@ function AssignmentCard({
   highlighted = false,
   now,
   onDelete,
+  onEdit,
   onToggleComplete,
 }) {
   const status = getAssignmentStatus(assignment, now)
@@ -207,6 +254,13 @@ function AssignmentCard({
           </div>
 
           <div className="assignment-card-actions">
+            <AssignmentActionButton
+              variant="edit"
+              onClick={() => onEdit(assignment)}
+            >
+              编辑作业
+            </AssignmentActionButton>
+
             <AssignmentActionButton
               danger
               onClick={() => setPendingAction('delete')}
@@ -279,6 +333,7 @@ export function AssignmentList({
   highlightedAssignmentId = null,
   now,
   onDelete,
+  onEdit,
   onToggleComplete,
 }) {
   if (assignments.length === 0) {
@@ -294,6 +349,7 @@ export function AssignmentList({
           key={assignment.id}
           now={now}
           onDelete={onDelete}
+          onEdit={onEdit}
           onToggleComplete={onToggleComplete}
         />
       ))}
@@ -507,12 +563,15 @@ function AssignmentPagination({
 export function ViewAssignments({
   assignments,
   highlightedAssignmentId = null,
+  minDeadline,
   now,
   onDelete,
   onHighlightComplete,
+  onSave,
   onToggleComplete,
 }) {
   const scrollAreaRef = useRef(null)
+  const [editingAssignment, setEditingAssignment] = useState(null)
   const [draftQuery, setDraftQuery] = useState(DEFAULT_QUERY)
   const [appliedQuery, setAppliedQuery] = useState(DEFAULT_QUERY)
   const [currentPage, setCurrentPage] = useState(1)
@@ -641,6 +700,15 @@ export function ViewAssignments({
           onSubmit={handleQuerySubmit}
         />
 
+        {editingAssignment && (
+          <EditAssignmentDialog
+            assignment={editingAssignment}
+            minDeadline={minDeadline}
+            onClose={() => setEditingAssignment(null)}
+            onSave={onSave}
+          />
+        )}
+
         {queriedAssignments.length > 0 ? (
           <>
             <AssignmentList
@@ -649,6 +717,7 @@ export function ViewAssignments({
               highlightedAssignmentId={highlightedAssignmentId}
               now={now}
               onDelete={onDelete}
+              onEdit={setEditingAssignment}
               onToggleComplete={onToggleComplete}
             />
             <AssignmentPagination
@@ -1100,144 +1169,6 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
           </button>
         </div>
       </form>
-    </section>
-  )
-}
-
-function EditAssignmentListItem({ active, assignment, now, onSelect }) {
-  const status = getAssignmentStatus(assignment, now)
-
-  return (
-    <button
-      className={`edit-assignment-item ${active ? 'active' : ''}`}
-      onClick={() => onSelect(assignment)}
-      type="button"
-    >
-      <div className="edit-assignment-item-title">
-        <strong>{assignment.title}</strong>
-        <span className={`assignment-status ${status.tone}`}>
-          {status.label}
-        </span>
-      </div>
-      <div className="edit-assignment-item-meta">
-        <span>{assignment.course || '未填写课程'}</span>
-        <span>{formatDateTime(assignment.deadline)}</span>
-      </div>
-    </button>
-  )
-}
-
-export function EditAssignmentView({
-  assignments,
-  editingAssignment,
-  minDeadline,
-  now,
-  onSave,
-  onSelect,
-}) {
-  const [savedAssignmentId, setSavedAssignmentId] = useState(null)
-  const successTimerRef = useRef(null)
-  const selectedAssignment = useMemo(
-    () =>
-      assignments.find(
-        (assignment) => assignment.id === editingAssignment?.id,
-      ) ?? null,
-    [assignments, editingAssignment],
-  )
-
-  useEffect(() => {
-    if (assignments.length === 0) {
-      if (editingAssignment) {
-        onSelect(null)
-      }
-
-      return
-    }
-
-    if (!selectedAssignment) {
-      onSelect(assignments[0])
-    }
-  }, [assignments, editingAssignment, onSelect, selectedAssignment])
-
-  useEffect(() => {
-    return () => {
-      window.clearTimeout(successTimerRef.current)
-    }
-  }, [])
-
-  if (assignments.length === 0) {
-    return (
-      <section className="edit-assignment-view">
-        <div className="edit-empty-panel">
-          <h2>暂无可编辑作业</h2>
-          <p>添加作业后，可以在这里修改作业名称、详情、课程和截止时间。</p>
-        </div>
-      </section>
-    )
-  }
-
-  const handleSave = (formData) => {
-    const updatedAssignment = {
-      ...selectedAssignment,
-      ...formData,
-    }
-
-    onSave(updatedAssignment)
-    onSelect(updatedAssignment)
-    setSavedAssignmentId(updatedAssignment.id)
-    window.clearTimeout(successTimerRef.current)
-    successTimerRef.current = window.setTimeout(() => {
-      setSavedAssignmentId(null)
-    }, 2200)
-  }
-
-  return (
-    <section className="edit-assignment-view">
-      <aside className="edit-assignment-list-panel" aria-label="可编辑作业列表">
-        <div className="edit-panel-heading">
-          <h2>选择作业</h2>
-          <span>{assignments.length} 项</span>
-        </div>
-
-        <div className="edit-assignment-list">
-          {assignments.map((assignment) => (
-            <EditAssignmentListItem
-              active={assignment.id === selectedAssignment?.id}
-              assignment={assignment}
-              key={assignment.id}
-              now={now}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-      </aside>
-
-      <div className="edit-assignment-form-area">
-        <div className="edit-panel-heading">
-          <h2>编辑内容</h2>
-          {selectedAssignment && (
-            <span>{selectedAssignment.completed ? '已完成' : '未完成'}</span>
-          )}
-        </div>
-
-        {savedAssignmentId === selectedAssignment?.id && (
-          <p className="form-success">保存成功。</p>
-        )}
-
-        {selectedAssignment ? (
-          <AssignmentForm
-            assignment={selectedAssignment}
-            key={selectedAssignment.id}
-            minDeadline={minDeadline}
-            onSubmit={handleSave}
-          />
-        ) : (
-          <div className="edit-empty-panel">
-            <h2>请选择作业</h2>
-            <p>从左侧列表中选择一个作业后即可编辑。</p>
-          </div>
-        )}
-      </div>
     </section>
   )
 }

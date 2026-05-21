@@ -1,6 +1,10 @@
 const EDIT_ACTIONS = [
   { id: 'add', label: '添加作业', icon: 'add' },
-  { id: 'edit', label: '编辑作业', icon: 'edit' },
+]
+
+const MOBILE_NAV_ACTIONS = [
+  { id: 'view', label: '查看作业', icon: 'view' },
+  ...EDIT_ACTIONS,
 ]
 
 function ChevronIcon({ className = '' }) {
@@ -143,7 +147,7 @@ export function Sidebar({
             aria-expanded={isEditMenuExpanded}
             aria-label="作业编辑"
             className={`edit-group-button ${
-              activeView === 'add' || activeView === 'edit' ? 'active' : ''
+              activeView === 'add' ? 'active' : ''
             } ${isCollapsed ? 'collapsed' : ''}`}
             onClick={onToggleEditMenu}
             title="作业编辑"
@@ -177,5 +181,27 @@ export function Sidebar({
         </div>
       </nav>
     </aside>
+  )
+}
+
+export function MobileBottomNav({ activeView, onChangeView }) {
+  return (
+    <nav className="mobile-bottom-nav" aria-label="移动端主导航">
+      {MOBILE_NAV_ACTIONS.map((action) => (
+        <button
+          aria-label={action.label}
+          aria-current={activeView === action.id ? 'page' : undefined}
+          className={`mobile-nav-button ${
+            activeView === action.id ? 'active' : ''
+          }`}
+          key={action.id}
+          onClick={() => onChangeView(action.id)}
+          type="button"
+        >
+          <SidebarIcon name={action.icon} />
+          <span>{action.label}</span>
+        </button>
+      ))}
+    </nav>
   )
 }

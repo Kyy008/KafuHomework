@@ -76,7 +76,6 @@ const loadAssignments = () => {
 export const useAssignmentStore = () => {
   const [assignments, setAssignments] = useState(loadAssignments)
   const [keyword, setKeyword] = useState('')
-  const [editingAssignment, setEditingAssignment] = useState(null)
   const [selectedAssignment, setSelectedAssignment] = useState(null)
 
   useEffect(() => {
@@ -129,9 +128,6 @@ export const useAssignmentStore = () => {
     setSelectedAssignment((currentAssignment) =>
       currentAssignment?.id === id ? null : currentAssignment,
     )
-    setEditingAssignment((currentAssignment) =>
-      currentAssignment?.id === id ? null : currentAssignment,
-    )
   }
 
   const saveAssignment = (updatedAssignment) => {
@@ -141,11 +137,6 @@ export const useAssignmentStore = () => {
           ? { ...assignment, ...updatedAssignment }
           : assignment,
       ),
-    )
-    setEditingAssignment((currentAssignment) =>
-      currentAssignment?.id === updatedAssignment.id
-        ? { ...currentAssignment, ...updatedAssignment }
-        : currentAssignment,
     )
   }
 
@@ -163,10 +154,8 @@ export const useAssignmentStore = () => {
     assignments,
     keyword,
     filteredAssignments,
-    editingAssignment,
     selectedAssignment,
     setKeyword,
-    setEditingAssignment,
     setSelectedAssignment,
     addAssignment,
     deleteAssignment,

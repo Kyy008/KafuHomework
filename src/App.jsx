@@ -2,17 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import {
   AssignmentForm,
-  EditAssignmentView,
   ViewAssignments,
 } from './components/assignments/AssignmentViews'
-import { Sidebar } from './components/layout/Sidebar'
+import { MobileBottomNav, Sidebar } from './components/layout/Sidebar'
 import { Topbar } from './components/layout/Topbar'
 import { useAssignmentStore } from './hooks/useAssignmentStore'
 import { formatDateTimeInputValue } from './utils/dateUtils'
 
 const getViewTitle = (activeView) => {
   if (activeView === 'add') return '添加作业'
-  if (activeView === 'edit') return '编辑作业'
   return '查看作业'
 }
 
@@ -65,8 +63,10 @@ function App() {
             <ViewAssignments
               assignments={assignmentStore.assignments}
               highlightedAssignmentId={highlightedAssignmentId}
+              minDeadline={minDeadline}
               now={now}
               onDelete={assignmentStore.deleteAssignment}
+              onSave={assignmentStore.saveAssignment}
               onHighlightComplete={clearHighlightedAssignment}
               onToggleComplete={assignmentStore.toggleComplete}
             />
@@ -79,20 +79,13 @@ function App() {
                 setActiveView('view')
               }}
             />
-          ) : activeView === 'edit' ? (
-            <EditAssignmentView
-              assignments={assignmentStore.assignments}
-              editingAssignment={assignmentStore.editingAssignment}
-              minDeadline={minDeadline}
-              now={now}
-              onSave={assignmentStore.saveAssignment}
-              onSelect={assignmentStore.setEditingAssignment}
-            />
           ) : (
             <section className="empty-view" />
           )}
         </main>
       </div>
+
+      <MobileBottomNav activeView={activeView} onChangeView={setActiveView} />
     </div>
   )
 }
