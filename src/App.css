@@ -6,6 +6,12 @@
   --border: #31362b;
   --panel: #151811;
   --panel-strong: #1b2017;
+  --page-background-image: url('./assets/pic/background.png');
+  --glass-panel: rgba(21, 24, 17, 0.58);
+  --glass-panel-strong: rgba(27, 32, 23, 0.66);
+  --glass-topbar: var(--glass-panel);
+  --glass-sidebar: var(--glass-panel);
+  --glass-blur: blur(18px);
   --primary: #cfd9f4;
   --primary-foreground: #08111f;
   --danger: #ff7a8a;
@@ -17,7 +23,10 @@
 
 .app-shell {
   min-height: 100vh;
-  background: var(--background);
+  background:
+    linear-gradient(rgba(5, 8, 5, 0.38), rgba(5, 8, 5, 0.48)),
+    var(--page-background-image) center / cover no-repeat fixed,
+    var(--background);
   color: var(--foreground);
 }
 
@@ -26,7 +35,8 @@
   min-height: 100vh;
   place-items: center;
   background:
-    radial-gradient(circle at 50% 0%, rgba(207, 217, 244, 0.08), transparent 34%),
+    linear-gradient(rgba(5, 8, 5, 0.34), rgba(5, 8, 5, 0.46)),
+    var(--page-background-image) center / cover no-repeat fixed,
     var(--background);
   color: var(--foreground);
   padding: 24px;
@@ -36,7 +46,8 @@
   width: min(100%, 420px);
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #242424;
+  background: rgba(36, 36, 36, 0.72);
+  backdrop-filter: var(--glass-blur);
   padding: 28px;
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.36);
   animation: dialog-panel-enter 180ms ease-out both;
@@ -180,8 +191,18 @@
   height: var(--topbar-height);
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
-  background: rgba(12, 13, 11, 0.95);
-  backdrop-filter: blur(10px);
+  background: var(--glass-topbar);
+  backdrop-filter: var(--glass-blur);
+}
+
+.topbar,
+.sidebar,
+.mobile-bottom-nav,
+.assignment-query-panel,
+.assignment-card {
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .brand {
@@ -257,7 +278,8 @@
   flex: 0 0 auto;
   overflow-y: auto;
   border-right: 1px solid var(--border);
-  background: #171918;
+  background: var(--glass-sidebar);
+  backdrop-filter: var(--glass-blur);
   padding: 20px 16px;
   transition:
     width 300ms ease-in-out,
@@ -335,14 +357,14 @@
 
 .tree-button:hover,
 .edit-group-button:hover {
-  background: var(--muted);
+  background: rgba(32, 36, 29, 0.58);
   color: var(--foreground);
 }
 
 .tree-button.active,
 .edit-group-button.active {
   border-color: var(--primary);
-  background: #263245;
+  background: rgba(38, 50, 69, 0.58);
   color: var(--primary);
 }
 
@@ -462,7 +484,7 @@
   min-width: 0;
   flex: 1 1 auto;
   overflow-y: auto;
-  background: var(--background);
+  background: transparent;
   padding: 24px 32px;
 }
 
@@ -648,7 +670,8 @@
 .assignment-query-panel {
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 16px;
 }
 
@@ -674,7 +697,7 @@
   min-height: 40px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #0f120d;
+  background: rgba(15, 18, 13, 0.58);
   color: var(--foreground);
   color-scheme: dark;
   outline: none;
@@ -744,7 +767,8 @@
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 16px;
   transition:
     border-color 180ms ease,
@@ -916,27 +940,27 @@
 }
 
 .assignment-action-button:hover {
-  background: var(--muted);
+  background: #20241d;
 }
 
 .assignment-action-button.danger {
   border-color: rgba(255, 122, 138, 0.65);
-  background: rgba(255, 122, 138, 0.1);
+  background: #2d191b;
   color: #ffc3ca;
 }
 
 .assignment-action-button.danger:hover {
-  background: rgba(255, 122, 138, 0.16);
+  background: #3a1f22;
 }
 
 .assignment-action-button.edit {
   border-color: rgba(87, 191, 218, 0.65);
-  background: rgba(87, 191, 218, 0.14);
+  background: #17313a;
   color: #bdefff;
 }
 
 .assignment-action-button.edit:hover {
-  background: rgba(87, 191, 218, 0.22);
+  background: #1d3d48;
 }
 
 .complete-button {
@@ -998,7 +1022,8 @@
   width: min(360px, calc(100vw - 32px));
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 24px;
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
   animation: dialog-panel-enter 180ms ease-out both;
@@ -1039,7 +1064,7 @@
 }
 
 .confirm-dialog-actions button:hover {
-  background: var(--muted);
+  background: #20241d;
 }
 
 .confirm-dialog-actions button:last-child {
@@ -1054,12 +1079,12 @@
 
 .confirm-dialog-actions button.danger {
   border-color: rgba(255, 122, 138, 0.75);
-  background: rgba(255, 122, 138, 0.16);
+  background: #2d191b;
   color: #ffc3ca;
 }
 
 .confirm-dialog-actions button.danger:hover {
-  background: rgba(255, 122, 138, 0.24);
+  background: #3a1f22;
 }
 
 .confirm-dialog-actions button:active {
@@ -1072,7 +1097,8 @@
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 20px;
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
   animation: dialog-panel-enter 180ms ease-out both;
@@ -1113,7 +1139,7 @@
 }
 
 .assignment-edit-dialog-heading button:hover {
-  background: var(--muted);
+  background: #20241d;
 }
 
 .assignment-edit-dialog-heading button:active {
@@ -1139,7 +1165,7 @@
 .assignment-info-pill {
   min-width: 0;
   border-radius: 6px;
-  background: var(--panel-strong);
+  background: var(--glass-panel-strong);
   padding: 9px 12px;
 }
 
@@ -1183,7 +1209,8 @@
 .assignment-empty-result {
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 22px;
   animation: soft-list-enter 220ms ease both;
 }
@@ -1208,7 +1235,8 @@
   gap: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 12px 14px;
 }
 
@@ -1251,7 +1279,7 @@
 }
 
 .pagination-page-list button:hover:not(:disabled) {
-  background: var(--muted);
+  background: #20241d;
 }
 
 .pagination-page-list button.active {
@@ -1280,7 +1308,8 @@
   margin: 0 auto;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   padding: 24px;
 }
 
@@ -1447,7 +1476,8 @@
   width: min(360px, 90vw);
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #171918;
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
   padding: 14px;
 }
@@ -1806,10 +1836,10 @@
     min-height: calc(
       var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom)
     );
-    border-top: 1px solid var(--border);
-    background: rgba(12, 13, 11, 0.96);
+  border-top: 1px solid var(--border);
+    background: var(--glass-panel);
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    backdrop-filter: blur(10px);
+    backdrop-filter: var(--glass-blur);
   }
 
   .mobile-nav-button {
