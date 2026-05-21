@@ -4,8 +4,10 @@ import {
   AssignmentForm,
   ViewAssignments,
 } from './components/assignments/AssignmentViews'
+import { AuthPage } from './components/auth/AuthPage'
 import { MobileBottomNav, Sidebar } from './components/layout/Sidebar'
 import { Topbar } from './components/layout/Topbar'
+import { useAuth } from './hooks/useAuth'
 import { useAssignmentStore } from './hooks/useAssignmentStore'
 import { formatDateTimeInputValue } from './utils/dateUtils'
 
@@ -20,6 +22,7 @@ function App() {
   const [isEditMenuExpanded, setIsEditMenuExpanded] = useState(true)
   const [highlightedAssignmentId, setHighlightedAssignmentId] = useState(null)
   const [now, setNow] = useState(() => new Date())
+  const auth = useAuth()
   const assignmentStore = useAssignmentStore()
   const minDeadline = useMemo(() => formatDateTimeInputValue(now), [now])
   const clearHighlightedAssignment = useCallback(() => {
@@ -36,13 +39,34 @@ function App() {
     }
   }, [])
 
+  if (auth.isAuthLoading) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card auth-loading-card">
+          <p>正在校验登录状态...</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (!auth.user) {
+    return (
+      <AuthPage
+        authError={auth.authError}
+        onLogin={auth.login}
+        onRegister={auth.register}
+        setAuthError={auth.setAuthError}
+      />
+    )
+  }
+
   return (
     <div
       className={`app-shell ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
       data-active-view={activeView}
       data-assignment-count={assignmentStore.assignments.length}
     >
-      <Topbar />
+      <Topbar onLogout={auth.logout} username={auth.user.username} />
 
       <div className="app-body">
         <Sidebar

@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Local auth data
+server/data/*.json
+
 # Generated archives
 *.zip
 
