@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { isGitHubPagesRuntime } from '../utils/runtime'
 
 const staticDemoUser = {
   id: 'github-pages-demo',
   username: 'Demo',
 }
-
-const isGitHubPagesRuntime = () =>
-  typeof window !== 'undefined' &&
-  window.location.hostname.toLowerCase().endsWith('github.io')
 
 const createStaticUser = (username) => ({
   id: 'github-pages-demo',
