@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'ddl-reminder-assignments'
 const DEMO_STORAGE_VERSION_KEY = 'ddl-reminder-demo-version'
-const DEMO_ASSIGNMENT_VERSION = '2026-06-full-month-homework-demo'
+const DEMO_ASSIGNMENT_VERSION = '2026-07-demo-shift'
 
 const isGitHubPagesRuntime = () =>
   typeof window !== 'undefined' &&
@@ -18,67 +18,70 @@ const createDateByOffset = (dayOffset, hour = 20, minute = 0) => {
 const createDemoDate = (day, hour = 20, minute = 0) =>
   new Date(2026, 5, day, hour, minute, 0, 0).toISOString()
 
+const createJulyDemoDate = (day, hour = 20, minute = 0) =>
+  new Date(2026, 6, day, hour, minute, 0, 0).toISOString()
+
 const createGitHubPagesDemoAssignments = () => {
   const assignments = [
     {
       title: '操作系统进程调度实验',
       detail: '整理实验步骤，补充进程调度算法对比和运行截图。',
       course: '操作系统',
-      deadline: createDemoDate(5, 21, 0),
+      deadline: createJulyDemoDate(1, 21, 0),
     },
     {
       title: '软件工程实训需求说明',
       detail: '完善需求分析、用例图和功能优先级说明。',
       course: '软件工程实训',
-      deadline: createDemoDate(6, 20, 30),
+      deadline: createJulyDemoDate(2, 20, 30),
     },
     {
       title: '企业面试自我介绍准备',
       detail: '准备一分钟中文介绍、项目经历复盘和常见问题回答。',
       course: '企业面试',
-      deadline: createDemoDate(7, 19, 0),
+      deadline: createJulyDemoDate(3, 19, 0),
     },
     {
       title: '大创答辩 PPT 初稿',
       detail: '完成研究背景、创新点、阶段成果和经费使用说明。',
       course: '大创答辩',
-      deadline: createDemoDate(8, 22, 0),
+      deadline: createJulyDemoDate(4, 22, 0),
     },
     {
       title: '党课考试复习提纲',
       detail: '整理课堂重点、选择题易错点和简答题模板。',
       course: '党课考试',
-      deadline: createDemoDate(9, 21, 30),
+      deadline: createJulyDemoDate(5, 21, 30),
     },
     {
       title: '体测项目打卡记录',
       detail: '记录跑步、跳远、仰卧起坐训练数据并完成提交。',
       course: '体测',
-      deadline: createDemoDate(10, 18, 0),
+      deadline: createJulyDemoDate(6, 18, 0),
     },
     {
       title: 'API 设计接口文档',
       detail: '补全用户、作业、统计模块接口路径、参数和响应示例。',
       course: 'API 设计',
-      deadline: createDemoDate(11, 20, 0),
+      deadline: createJulyDemoDate(7, 20, 0),
     },
     {
       title: '大型平台报告资料汇总',
       detail: '整理平台架构、核心模块、部署方案和性能指标。',
       course: '大型平台报告',
-      deadline: createDemoDate(12, 21, 0),
+      deadline: createJulyDemoDate(8, 21, 0),
     },
     {
       title: '物联网大作业传感器方案',
       detail: '完成设备选型、数据采集流程和系统拓扑图。',
       course: '物联网大作业',
-      deadline: createDemoDate(13, 20, 30),
+      deadline: createJulyDemoDate(9, 20, 30),
     },
     {
       title: '轻量化项目部署总结',
       detail: '记录 GitHub Pages 部署过程、静态限制和演示方案。',
       course: '轻量化软件开发',
-      deadline: createDemoDate(14, 22, 0),
+      deadline: createJulyDemoDate(10, 22, 0),
     },
     {
       title: '数据库课程 ER 图修改',
