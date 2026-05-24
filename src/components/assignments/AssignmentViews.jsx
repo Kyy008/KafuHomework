@@ -55,6 +55,7 @@ const getDayStart = (value) => (value ? new Date(`${value}T00:00:00`) : null)
 
 const getDayEnd = (value) => (value ? new Date(`${value}T23:59:59.999`) : null)
 
+// 查询条件集中在这里处理，组件渲染层只关心最终筛选结果。
 const filterAssignmentsByQuery = (assignments, query) => {
   const titleKeyword = normalizeText(query.title)
   const detailKeyword = normalizeText(query.detail)
@@ -92,6 +93,7 @@ const filterAssignmentsByQuery = (assignments, query) => {
 const getCustomOrder = (assignment) =>
   Number.isFinite(assignment.order) ? assignment.order : Number.MAX_SAFE_INTEGER
 
+// 自定义排序优先看 order；如果 order 相同，再用创建时间兜底保证结果稳定。
 const sortAssignments = (assignments, field, order) =>
   [...assignments].sort((leftAssignment, rightAssignment) => {
     if (field === 'custom') {
@@ -126,6 +128,7 @@ function EditAssignmentDialog({
   }
 
   return createPortal(
+    // 弹窗挂载到 body，避免受到父级滚动容器 overflow 的裁剪。
     <div className="confirm-dialog-backdrop" role="presentation">
       <div
         aria-modal="true"
@@ -163,6 +166,7 @@ function StatBlock({ label, tone, value }) {
   )
 }
 
+// 统计区根据当前查询结果计算，不受分页影响。
 export function StatsSection({ stats }) {
   return (
     <section className="stats-section grid grid-cols-4 gap-4 max-md:grid-cols-2">
@@ -300,6 +304,7 @@ function AssignmentQueryPanel({
   )
 }
 
+// 分页组件只负责展示和切页，页码计算由 ViewAssignments 完成。
 function AssignmentPagination({
   currentPage,
   onPageChange,
@@ -400,6 +405,7 @@ export function ViewAssignments({
   const [sortField, setSortField] = useState('deadline')
   const [sortOrder, setSortOrder] = useState('asc')
   const isCustomSort = sortField === 'custom'
+  // 自定义排序需要拿到完整列表，分页时拖拽只能重排当前页会造成体验割裂。
   const effectivePageSize = isCustomSort ? 'all' : pageSize
 
   const queriedAssignments = useMemo(
@@ -425,6 +431,7 @@ export function ViewAssignments({
   const listAnimationKey = `${JSON.stringify(appliedQuery)}-${sortField}-${sortOrder}-${effectivePageSize}-${safeCurrentPage}-${sortedAssignments
     .map((assignment) => assignment.id)
     .join('-')}`
+  // 只把当前页数据交给列表组件，降低普通浏览模式下的渲染数量。
   const pagedAssignments = useMemo(() => {
     if (effectivePageSize === 'all') {
       return sortedAssignments
@@ -620,6 +627,7 @@ function CalendarDatePicker({ minDeadline, onChange, value }) {
   }
 
   const updateDraftDay = (day) => {
+    // 切换日期时保留原先选择的时分，日期和时间两个选择器共同维护同一个 deadline。
     setDraftDate(
       new Date(
         day.getFullYear(),
@@ -763,6 +771,7 @@ function CalendarDatePicker({ minDeadline, onChange, value }) {
   )
 }
 
+// 时间选择器与日期选择器分离，降低单个弹层复杂度。
 function TimePicker({ minDeadline, onChange, value }) {
   const pickerRef = useRef(null)
   const initialDate =
@@ -910,6 +919,7 @@ export function AssignmentForm({ assignment = null, minDeadline, onSubmit }) {
       deadline: formData.deadline,
     }
 
+    // 表单提交前统一 trim，避免只输入空格也被当成有效内容。
     if (!nextAssignment.title) {
       setError('请填写作业名称。')
       return

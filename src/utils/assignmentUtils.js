@@ -118,6 +118,7 @@ export const calculateAssignmentProgress = (assignment, now = new Date()) => {
     return nowTime >= deadlineTime ? 100 : 0
   }
 
+  // 进度条表达“从创建到截止已经过去了多少时间”，用于提示紧迫程度。
   return clampPercentage(((nowTime - startTime) / totalMs) * 100)
 }
 
@@ -149,5 +150,6 @@ export const getProgressColor = (progress) => {
     return rgbToCss(mixRgb(startColor, midColor, clampedProgress / 50))
   }
 
+  // 50% 后从黄色逐渐过渡到红色，让临近截止的作业更醒目。
   return rgbToCss(mixRgb(midColor, endColor, (clampedProgress - 50) / 50))
 }

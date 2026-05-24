@@ -26,6 +26,7 @@ app.use(cookieParser())
 const sendError = (response, status, message) =>
   response.status(status).json({ error: message })
 
+// 用户和 session 采用 JSON 文件保存，适合课程作业的小规模演示场景。
 const readJsonFile = async (filePath, fallbackValue) => {
   try {
     const content = await fs.readFile(filePath, 'utf8')
@@ -49,6 +50,7 @@ const writeUsers = (users) => writeJsonFile(usersFile, users)
 const readSessions = () => readJsonFile(sessionsFile, [])
 const writeSessions = (sessions) => writeJsonFile(sessionsFile, sessions)
 
+// 用户名统一去掉首尾空格，避免 "Tom" 和 " Tom " 被注册成两个账号。
 const normalizeUsername = (username) => username.trim()
 
 const validateUsername = (username) => {
@@ -73,6 +75,7 @@ const validateUsername = (username) => {
   return ''
 }
 
+// 密码规则前后端保持一致，后端仍然作为最终校验入口。
 const validatePassword = (password) => {
   if (!password) {
     return '请输入密码。'
@@ -124,6 +127,7 @@ const verifyPassword = async (password, storedHash) => {
   })
   const storedKey = Buffer.from(key, 'hex')
 
+  // 使用 timingSafeEqual 避免通过比较耗时推测密码哈希内容。
   return (
     storedKey.length === derivedKey.length &&
     crypto.timingSafeEqual(storedKey, derivedKey)
@@ -135,6 +139,7 @@ const getPublicUser = (user) => ({
   username: user.username,
 })
 
+// 登录成功后创建随机 token，并通过 HttpOnly Cookie 返回给浏览器。
 const createSession = async (userId, response) => {
   const sessions = await readSessions()
   const now = Date.now()
@@ -147,6 +152,7 @@ const createSession = async (userId, response) => {
     (currentSession) => new Date(currentSession.expiresAt).getTime() > now,
   )
 
+  // 写入新 session 前顺手清理过期项，保持本地 JSON 文件体积可控。
   activeSessions.push(session)
   await writeSessions(activeSessions)
 
@@ -177,6 +183,7 @@ const getSessionUser = async (request) => {
 
   const [sessions, users] = await Promise.all([readSessions(), readUsers()])
   const now = Date.now()
+  // 每次校验都同时检查 token 和过期时间，避免过期 Cookie 继续保持登录态。
   const session = sessions.find(
     (currentSession) =>
       currentSession.token === token &&
@@ -203,6 +210,7 @@ app.post('/api/auth/register', async (request, response, next) => {
     }
 
     const users = await readUsers()
+    // 用户名比较时忽略大小写，避免 Kafu 和 kafu 同时注册。
     const usernameExists = users.some(
       (user) => user.username.toLowerCase() === username.toLowerCase(),
     )
@@ -280,6 +288,7 @@ app.post('/api/auth/logout', async (request, response, next) => {
 
     if (token) {
       const sessions = await readSessions()
+      // 退出登录时删除当前 token 对应的服务端 session。
       await writeSessions(
         sessions.filter((session) => session.token !== token),
       )
@@ -296,6 +305,7 @@ if (isProduction) {
   const distDir = path.join(rootDir, 'dist')
 
   if (existsSync(distDir)) {
+    // 生产模式由 Express 托管 Vite 构建产物，并把前端路由回退到 index.html。
     app.use(express.static(distDir))
     app.get(/.*/, (request, response) => {
       response.sendFile(path.join(distDir, 'index.html'))

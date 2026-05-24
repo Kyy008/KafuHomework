@@ -13,6 +13,7 @@ const accountNameClass =
 const logoutButtonClass =
   'logout-button min-h-10 rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-3 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--danger)] hover:text-[var(--danger)] active:scale-[0.98]'
 
+// 顶部栏只负责展示品牌、当前用户和退出登录入口。
 export function Topbar({ onLogout, username }) {
   return (
     <header className={topbarClass}>

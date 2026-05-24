@@ -15,6 +15,7 @@ const createDateByOffset = (dayOffset, hour = 20, minute = 0) => {
   return date.toISOString()
 }
 
+// 非 GitHub Pages 环境首次打开时使用的本地默认作业。
 const createInitialAssignments = () => [
   {
     id: 1,
@@ -95,6 +96,7 @@ const getReorderedAssignments = (assignments, orderedIds) => {
     normalizedOrderedIds.map((id, index) => [id, reusableOrderValues[index]]),
   )
 
+  // 只交换当前列表已有的 order 值，避免分页/筛选外的作业顺序被意外打乱。
   return assignments.map((assignment) => {
     const nextOrder = nextOrderById.get(String(assignment.id))
 
@@ -115,6 +117,7 @@ const loadAssignments = () => {
       isGitHubPagesRuntime() &&
       localStorage.getItem(DEMO_STORAGE_VERSION_KEY) !== DEMO_ASSIGNMENT_VERSION
     ) {
+      // demo 数据带版本号，线上示例更新后可以自动覆盖旧的本地缓存。
       const demoAssignments = createGitHubPagesDemoAssignments()
       localStorage.setItem(STORAGE_KEY, JSON.stringify(demoAssignments))
       localStorage.setItem(DEMO_STORAGE_VERSION_KEY, DEMO_ASSIGNMENT_VERSION)
@@ -147,6 +150,7 @@ export const useAssignmentStore = () => {
   const [assignments, setAssignments] = useState(loadAssignments)
 
   useEffect(() => {
+    // 所有作业变化都同步到 localStorage，实现刷新后数据保留。
     localStorage.setItem(STORAGE_KEY, JSON.stringify(assignments))
   }, [assignments])
 

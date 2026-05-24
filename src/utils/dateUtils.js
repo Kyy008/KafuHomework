@@ -1,6 +1,7 @@
 export const HOUR_MS = 60 * 60 * 1000
 
 export const formatDateTimeInputValue = (date) => {
+  // datetime-local 使用本地时间字符串，不能直接截取 UTC 的 toISOString。
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
   return offsetDate.toISOString().slice(0, 16)
 }
@@ -36,6 +37,7 @@ export const getDefaultDeadlineDate = (minDeadline) => {
   const minDate = parseLocalDateTimeValue(minDeadline) ?? new Date()
   const defaultDate = new Date(minDate.getTime() + HOUR_MS)
   defaultDate.setSeconds(0, 0)
+  // 时间选择器按 5 分钟步进展示，默认值也对齐到最近的 5 分钟。
   defaultDate.setMinutes(Math.ceil(defaultDate.getMinutes() / 5) * 5)
   return defaultDate
 }

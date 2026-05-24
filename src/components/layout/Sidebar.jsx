@@ -2,6 +2,7 @@ const EDIT_ACTIONS = [
   { id: 'add', label: '添加作业', icon: 'add' },
 ]
 
+// 桌面端侧边栏和移动端底部栏共用同一份导航配置，避免两个入口不一致。
 const MOBILE_NAV_ACTIONS = [
   { id: 'view', label: '查看作业', icon: 'view' },
   ...EDIT_ACTIONS,
@@ -117,6 +118,7 @@ function SidebarIcon({ className = '', name }) {
   )
 }
 
+// 抽出通用树形按钮，统一处理 active、collapsed 两类导航状态。
 function TreeButton({ active, collapsed, icon, label, onClick }) {
   return (
     <button
@@ -135,6 +137,7 @@ function TreeButton({ active, collapsed, icon, label, onClick }) {
   )
 }
 
+// 桌面端导航支持收起和二级菜单展开，用于保留更多工作区宽度。
 export function Sidebar({
   activeView,
   isCollapsed,
@@ -211,6 +214,7 @@ export function Sidebar({
   )
 }
 
+// 小屏幕不显示侧边栏，改用底部导航减少横向空间占用。
 export function MobileBottomNav({ activeView, onChangeView }) {
   return (
     <nav className={mobileBottomNavClass} aria-label="移动端主导航">

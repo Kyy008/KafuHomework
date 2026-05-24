@@ -6,6 +6,7 @@ const staticDemoUser = {
   username: 'Demo',
 }
 
+// 静态预览允许用户输入任意用户名进入系统，但不写入后端。
 const createStaticUser = (username) => ({
   id: 'github-pages-demo',
   username: username.trim() || staticDemoUser.username,
@@ -15,6 +16,7 @@ const parseApiResponse = async (response) => {
   const payload = await response.json().catch(() => ({}))
 
   if (!response.ok) {
+    // 后端会返回统一的 error 字段，前端直接抛出给表单展示。
     throw new Error(payload.error || '请求失败。')
   }
 
@@ -33,6 +35,7 @@ const postAuthRequest = async (url, body = null) => {
 }
 
 export function useAuth() {
+  // GitHub Pages 无法运行 Express 后端，因此线上静态预览走 demo 登录流程。
   const isStaticDemo = isGitHubPagesRuntime()
   const [authError, setAuthError] = useState('')
   const [isAuthLoading, setIsAuthLoading] = useState(!isStaticDemo)
@@ -71,6 +74,7 @@ export function useAuth() {
 
     if (isStaticDemo) return undefined
 
+    // 页面刷新后主动询问后端是否仍有有效 Cookie session。
     const loadSession = async () => {
       try {
         const response = await fetch('/api/auth/session', {
@@ -106,6 +110,7 @@ export function useAuth() {
     setAuthError('')
 
     if (isStaticDemo) {
+      // 静态环境下不校验密码，只用于展示页面和交互效果。
       const staticUser = createStaticUser(username)
       setUser(staticUser)
       return staticUser
@@ -123,6 +128,7 @@ export function useAuth() {
     setAuthError('')
 
     if (isStaticDemo) {
+      // 注册在静态环境中同样退化为 demo 登录，不产生真实账号。
       const staticUser = createStaticUser(username)
       setUser(staticUser)
       return staticUser

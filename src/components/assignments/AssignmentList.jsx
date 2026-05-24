@@ -7,6 +7,7 @@ import {
 } from '../../utils/assignmentUtils'
 import { formatDateTime } from '../../utils/dateUtils'
 
+// 拖拽到滚动区域边缘时，停留一小段时间后自动滚动，方便跨多条作业排序。
 const DRAG_AUTO_SCROLL_DELAY_MS = 500
 const DRAG_AUTO_SCROLL_EDGE_SIZE = 80
 const DRAG_AUTO_SCROLL_MIN_SPEED = 1
@@ -50,6 +51,7 @@ function InfoPill({ label, value }) {
   )
 }
 
+// 作业卡片上的操作按钮统一封装，便于保持编辑/删除按钮风格一致。
 function AssignmentActionButton({
   children,
   danger = false,
@@ -75,6 +77,7 @@ function AssignmentActionButton({
   )
 }
 
+// 删除和完成都需要二次确认，弹窗通过 Portal 脱离列表布局。
 function ConfirmDialog({ confirmTone = 'default', message, onCancel, onConfirm }) {
   return createPortal(
     <div
@@ -122,6 +125,7 @@ function AssignmentCard({
 }) {
   const status = getAssignmentStatus(assignment, now)
   const progress = calculateAssignmentProgress(assignment, now)
+  // pendingAction 记录当前等待确认的操作，避免为删除/完成各写一套弹窗状态。
   const [pendingAction, setPendingAction] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -132,6 +136,7 @@ function AssignmentCard({
   const confirmPendingAction = () => {
     if (pendingAction === 'delete') {
       closeDialog()
+      // 先播放离场动画，动画结束后再真正从数据中删除。
       setIsDeleting(true)
       return
     }
@@ -276,6 +281,7 @@ export function AssignmentList({
   onReorder,
   onToggleComplete,
 }) {
+  // 拖拽过程中的中间顺序保存在 ref/state 中，松手后再提交给上层持久化。
   const listRef = useRef(null)
   const cardPositionsRef = useRef(new Map())
   const cardAnimationFrameRef = useRef(null)
@@ -367,6 +373,7 @@ export function AssignmentList({
       })
       .filter(Boolean)
 
+    // FLIP 动画：先把卡片放回旧位置，再交给 CSS transition 过渡到新位置。
     cardAnimationFrameRef.current = window.requestAnimationFrame(() => {
       movedCards.forEach(({ element, resetTransform }) => {
         element.style.transition = ''
@@ -403,6 +410,7 @@ export function AssignmentList({
 
     const getScrollArea = () => listRef.current?.closest('.view-scroll-area')
 
+    // 拖拽时根据鼠标位置实时重排临时顺序，不直接修改原始 assignments。
     const updateDragOrder = (clientY) => {
       if (!listRef.current) {
         return
@@ -434,6 +442,7 @@ export function AssignmentList({
           }
         })
 
+      // 根据指针穿过其他卡片中心线的位置，计算拖拽卡片应插入的索引。
       const nextIndexCandidate = staticCards.findIndex(
         (card) => clientY < card.centerY,
       )
@@ -541,6 +550,7 @@ export function AssignmentList({
 
       clearAutoScroll()
       autoScrollDirectionRef.current = direction
+      // 指针停在边缘一小段时间后才滚动，避免正常拖拽经过边缘时误触发。
       autoScrollDelayTimerRef.current = window.setTimeout(() => {
         autoScrollDelayTimerRef.current = null
         autoScrollAnimationFrameRef.current =
@@ -557,6 +567,7 @@ export function AssignmentList({
 
     const handlePointerEnd = () => {
       clearAutoScroll()
+      // 松手时才把最终顺序提交给父组件，减少拖拽过程中的持久化写入。
       onReorder?.(orderedIdsRef.current)
       setDraggingAssignmentId(null)
       setDragOrderIds(null)
@@ -594,6 +605,7 @@ export function AssignmentList({
     }
 
     event.preventDefault()
+    // 拖拽开始时固定当前列表 id 顺序，后续只在这份顺序上移动目标卡片。
     const nextOrderedIds = assignments.map((assignment) => String(assignment.id))
     orderedIdsRef.current = nextOrderedIds
     lastPointerYRef.current = event.clientY

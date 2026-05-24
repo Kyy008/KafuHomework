@@ -1,11 +1,13 @@
 export const DEMO_ASSIGNMENT_VERSION = '2026-07-demo-shift'
 
+// 月份参数从 0 开始，5 表示六月、6 表示七月。
 const createJuneDemoDate = (day, hour = 20, minute = 0) =>
   new Date(2026, 5, day, hour, minute, 0, 0).toISOString()
 
 const createJulyDemoDate = (day, hour = 20, minute = 0) =>
   new Date(2026, 6, day, hour, minute, 0, 0).toISOString()
 
+// GitHub Pages 只能展示静态页面，因此这里准备一组可直接体验的演示作业。
 export const createGitHubPagesDemoAssignments = () => {
   const assignments = [
     {
@@ -168,6 +170,7 @@ export const createGitHubPagesDemoAssignments = () => {
 
   const createdAt = new Date(2026, 4, 21, 9, 0, 0, 0).toISOString()
 
+  // 统一补齐持久化所需字段，让 demo 数据和用户新增的数据结构保持一致。
   return assignments.map((assignment, index) => ({
     ...assignment,
     id: `github-pages-demo-${index + 1}`,

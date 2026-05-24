@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import appIcon from '../../assets/icon/icon.png'
 
+// 前端先做一次轻量校验，避免明显错误请求直接打到后端。
 const validateUsername = (username) => {
   const trimmedUsername = username.trim()
 
@@ -74,6 +75,7 @@ const authSwitchClass =
 const authSwitchButtonClass =
   'ml-2 border-0 bg-transparent p-0 font-extrabold text-[var(--primary)] hover:underline'
 
+// 登录和注册共用同一个页面，通过 isRegisterMode 切换表单字段和提交接口。
 export function AuthPage({ authError, onLogin, onRegister, setAuthError }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isRegisterMode, setIsRegisterMode] = useState(false)
@@ -85,6 +87,7 @@ export function AuthPage({ authError, onLogin, onRegister, setAuthError }) {
   const error = localError || authError
 
   const switchMode = () => {
+    // 切换登录/注册时清理旧错误，避免用户看到上一个模式留下的提示。
     setIsRegisterMode((currentMode) => !currentMode)
     setConfirmPassword('')
     setLocalError('')
@@ -94,6 +97,7 @@ export function AuthPage({ authError, onLogin, onRegister, setAuthError }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmedUsername = username.trim()
+    // 校验顺序从用户名到密码再到确认密码，提示更贴近用户输入流程。
     const validationMessage =
       validateUsername(trimmedUsername) ||
       validatePassword(password, isRegisterMode) ||
