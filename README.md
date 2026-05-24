@@ -1,8 +1,8 @@
-# 第三次作业报告
+# KafuHomework
 
-**姓名：** 客昱阳  
-**学号：** 23301037
-**作业名称：** KafuHomework
+![KafuCourseTable](pic/1.png)
+![KafuCourseTable](pic/2.png)
+![KafuCourseTable](pic/3.png)
 ---
 
 - 作业使用 **纯HTML、CSS、JavaScript** 实现。并已完成 **所有基础与附加功能**。
